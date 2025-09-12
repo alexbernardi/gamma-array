@@ -6,6 +6,10 @@
 #include <cmath>
 #include <iostream>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 namespace gamma {
 namespace ui {
 
@@ -16,7 +20,8 @@ OutputPanel::OutputPanel()
     , _showMonitoring(true)
     , _outputLevel(0.75f)
     , _selectedDevice(0)
-    , _isConnected(false) {
+    , _isConnected(false)
+    , _jogWheelRotation(0.0f) {
 }
 
 void OutputPanel::setApplication(gamma::core::Application* app) {
@@ -301,14 +306,40 @@ void OutputPanel::renderMidiDeviceSelection() {
 }
 
 void OutputPanel::renderMidiControlMapping() {
-    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "DDJ-REV1 Control Mapping:");
+    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Jog Wheel Visualization:");
     
-    ImGui::Text("• Jog Wheels: Video Scrubbing");
-    ImGui::Text("• Crossfader: Video Mix Control");
-    ImGui::Text("• Play/Pause: Transport Control");
-    ImGui::Text("• Effects Knobs: Video Effects Parameters");
-    ImGui::Text("• Channel Faders: Layer Opacity");
-    ImGui::Text("• Cue Points: Scene Triggers");
+    // Jog wheel visual display
+    ImVec2 center = ImGui::GetCursorScreenPos();
+    center.x += 80; // Center the wheel
+    center.y += 80;
+    float radius = 60.0f;
+    
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    
+    // Draw outer ring
+    drawList->AddCircle(center, radius, IM_COL32(100, 100, 100, 255), 32, 3.0f);
+    
+    // Draw inner circle
+    drawList->AddCircleFilled(center, radius - 10, IM_COL32(30, 30, 30, 255), 32);
+    
+    // Draw rotation indicator
+    float rotationRad = _jogWheelRotation * (M_PI / 180.0f);
+    ImVec2 indicatorPos = ImVec2(
+        center.x + cos(rotationRad - M_PI/2) * (radius - 20),
+        center.y + sin(rotationRad - M_PI/2) * (radius - 20)
+    );
+    
+    // Indicator line from center to edge
+    drawList->AddLine(center, indicatorPos, IM_COL32(0, 200, 255, 255), 3.0f);
+    
+    // Indicator dot
+    drawList->AddCircleFilled(indicatorPos, 4.0f, IM_COL32(0, 255, 200, 255), 12);
+    
+    // Reserve space for the wheel
+    ImGui::Dummy(ImVec2(160, 160));
+    
+    // Display rotation value
+    ImGui::Text("Rotation: %.1f degrees", _jogWheelRotation);
 }
 
 void OutputPanel::renderMidiStatus() {
@@ -377,29 +408,26 @@ void OutputPanel::renderMidiSignalLog() {
         }
     }
     ImGui::EndChild();
-    
-    // Clear log button
-    if (ImGui::Button("Clear Log")) {
+}
+
+void OutputPanel::renderMidiConfigButtons() {
+    // Simplified controls - just clear log for now
+    if (ImGui::Button("Clear Log", ImVec2(-1, 0))) {
         if (_application && _application->getMidiManager()) {
             _application->getMidiManager()->clearMessageHistory();
         }
     }
 }
 
-void OutputPanel::renderMidiConfigButtons() {
-    if (ImGui::Button("Start Learning Mode", ImVec2(-1, 0))) {
-        // TODO: Begin MIDI learning mode
-        std::cout << "MIDI learning mode activated" << std::endl;
-    }
+void OutputPanel::updateJogWheelRotation(float deltaRotation) {
+    _jogWheelRotation += deltaRotation;
     
-    if (ImGui::Button("Load DDJ-REV1 Preset", ImVec2(-1, 0))) {
-        // TODO: Load DDJ-REV1 preset mapping
-        std::cout << "Loading DDJ-REV1 preset..." << std::endl;
+    // Keep rotation in 0-360 degree range
+    while (_jogWheelRotation >= 360.0f) {
+        _jogWheelRotation -= 360.0f;
     }
-    
-    if (ImGui::Button("Save Current Mapping", ImVec2(-1, 0))) {
-        // TODO: Save current MIDI mapping
-        std::cout << "Saving MIDI mapping..." << std::endl;
+    while (_jogWheelRotation < 0.0f) {
+        _jogWheelRotation += 360.0f;
     }
 }
 

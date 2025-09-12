@@ -53,6 +53,9 @@ private:
     int _selectedDevice;
     bool _isConnected;
     
+    // Jog wheel state
+    float _jogWheelRotation;  // Current rotation in degrees (0-360)
+    
     // UI helpers - existing output functionality
     void renderVideoOutput();
     void renderWaveformOverlay();
@@ -69,6 +72,9 @@ private:
     void renderMidiStatus();
     void renderMidiSignalLog();
     void renderMidiConfigButtons();
+    
+    // Jog wheel control
+    void updateJogWheelRotation(float deltaRotation);
 };
 
 } // namespace ui
