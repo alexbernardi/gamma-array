@@ -1,9 +1,15 @@
 #pragma once
 
+#include <memory>
+
 // Forward declarations
 struct GLFWwindow;
 
 namespace gamma {
+namespace ui {
+class WorkspaceManager;
+}
+
 namespace core {
 
 /**
@@ -48,6 +54,9 @@ private:
     bool _shouldRun;
     bool _fullscreen;
     GLFWwindow* _window;
+    
+    // UI Manager
+    std::unique_ptr<gamma::ui::WorkspaceManager> _workspaceManager;
 
     // Core subsystem initialization methods
     bool initializeWindow();

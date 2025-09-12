@@ -1,4 +1,5 @@
 #include "core/Application.h"
+#include "ui/WorkspaceManager.h"
 #include <iostream>
 #include <chrono>
 
@@ -44,7 +45,8 @@ Application::Application()
     : _initialized(false)
     , _shouldRun(false)
     , _fullscreen(true)
-    , _window(nullptr) {
+    , _window(nullptr)
+    , _workspaceManager(nullptr) {
 }
 
 Application::~Application() {
@@ -318,10 +320,13 @@ bool Application::initializeImGui() {
 bool Application::initializeSubsystems() {
     std::cout << "Initializing subsystems..." << std::endl;
 
+    // Initialize workspace manager
+    _workspaceManager = std::make_unique<gamma::ui::WorkspaceManager>();
+    _workspaceManager->initialize();
+
     // TODO: Initialize rendering engine
     // TODO: Initialize audio engine  
     // TODO: Initialize MIDI system
-    // TODO: Initialize UI system
 
     std::cout << "Core subsystems initialized" << std::endl;
     return true;
@@ -333,10 +338,13 @@ void Application::processEvents() {
 }
 
 void Application::update(float deltaTime) {
-    // TODO: Update all subsystems with delta time
+    // Update workspace manager
+    if (_workspaceManager) {
+        _workspaceManager->update(deltaTime);
+    }
+
     // TODO: Update MIDI input
     // TODO: Update audio processing
-    // TODO: Update UI state
 }
 
 void Application::render() {
@@ -351,8 +359,12 @@ void Application::render() {
     // Create the navigation bar
     renderNavigationBar();
 
+    // Render workspace panels
+    if (_workspaceManager) {
+        _workspaceManager->render();
+    }
+
     // TODO: Render video effects
-    // TODO: Render main UI panels
 
     // Render ImGui
     ImGui::Render();
@@ -454,6 +466,11 @@ void Application::toggleFullscreen() {
     
     _fullscreen = !_fullscreen;
     
+    // Update workspace manager about fullscreen state
+    if (_workspaceManager) {
+        _workspaceManager->setFullscreen(_fullscreen);
+    }
+    
     // Get monitor information
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
@@ -486,7 +503,13 @@ void Application::cleanupImGui() {
 
 void Application::cleanupSubsystems() {
     std::cout << "Cleaning up subsystems..." << std::endl;
-    // TODO: Cleanup UI system
+    
+    // Cleanup workspace manager
+    if (_workspaceManager) {
+        _workspaceManager->shutdown();
+        _workspaceManager.reset();
+    }
+
     // TODO: Cleanup MIDI system
     // TODO: Cleanup audio engine
     // TODO: Cleanup rendering engine
