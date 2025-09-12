@@ -74,5 +74,6 @@ gamma_array/
 - Maintain clean modular architecture
 - Focus on performance from the beginning
 - Do not use emojiis
+- After every update lets make a commit and push so we can revert if necessary
 
 This context enables efficient development assistance while maintaining project quality and avoiding over-engineering.

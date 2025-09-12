@@ -71,6 +71,25 @@ cmake --build build --config Debug
 .\build\bin\Debug\GammaArray_d.exe
 ```
 
+### Usage
+
+**Fullscreen Mode (Default)**:
+```powershell
+# Run in fullscreen mode (uses native monitor resolution)
+.\build\bin\Debug\GammaArray_d.exe
+```
+
+**Windowed Mode**:
+```powershell
+# Run in windowed mode (80% of screen size, centered)
+.\build\bin\Debug\GammaArray_d.exe --windowed
+# or
+.\build\bin\Debug\GammaArray_d.exe -w
+```
+
+**Controls**:
+- `ESC` - Exit application
+
 For detailed instructions, see [BUILD.md](BUILD.md).
 
 ## Project Structure
