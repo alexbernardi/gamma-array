@@ -41,20 +41,22 @@ void OutputPanel::render() {
                             ImGuiWindowFlags_NoTitleBar;
     
     if (ImGui::Begin("Output", &_visible, flags)) {
-        // Panel header with controls
-        renderOutputControls();
-        ImGui::Separator();
-        
-        // Main video output area
-        renderVideoOutput();
-        
-        // Overlays
-        if (_showWaveform) {
-            renderWaveformOverlay();
-        }
-        
-        if (_showMonitoring) {
-            renderMonitoringInfo();
+        // Create tabbed interface
+        if (ImGui::BeginTabBar("OutputTabs", ImGuiTabBarFlags_None)) {
+            
+            // Output Tab - for video display
+            if (ImGui::BeginTabItem("Output")) {
+                renderOutputTab();
+                ImGui::EndTabItem();
+            }
+            
+            // MIDI Control Setup Tab - for MIDI configuration
+            if (ImGui::BeginTabItem("MIDI Control Setup")) {
+                renderMidiSetupTab();
+                ImGui::EndTabItem();
+            }
+            
+            ImGui::EndTabBar();
         }
     }
     ImGui::End();
@@ -173,6 +175,95 @@ void OutputPanel::renderMonitoringInfo() {
     } catch (...) {
         // Fallback if there's any rendering issue
         ImGui::Text("[INFO] Monitoring data unavailable");
+    }
+}
+
+void OutputPanel::renderOutputTab() {
+    // Move existing output functionality into this tab
+    
+    // Panel header with controls
+    renderOutputControls();
+    ImGui::Separator();
+    
+    // Main video output area
+    renderVideoOutput();
+    
+    // Overlays
+    if (_showWaveform) {
+        renderWaveformOverlay();
+    }
+    
+    if (_showMonitoring) {
+        renderMonitoringInfo();
+    }
+}
+
+void OutputPanel::renderMidiSetupTab() {
+    // MIDI Control Setup tab content
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f)); // Cyan
+    ImGui::Text("MIDI Control Setup");
+    ImGui::PopStyleColor();
+    
+    ImGui::Separator();
+    
+    // Placeholder content for MIDI setup
+    ImGui::Text("MIDI Controller Configuration");
+    ImGui::Spacing();
+    
+    // Device selection section
+    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Device Selection:");
+    ImGui::Indent();
+    
+    static int selectedDevice = 0;
+    const char* devices[] = { "No devices detected", "Pioneer DDJ-REV1", "Generic MIDI Controller" };
+    ImGui::Combo("MIDI Device", &selectedDevice, devices, IM_ARRAYSIZE(devices));
+    
+    ImGui::SameLine();
+    if (ImGui::Button("Refresh")) {
+        // TODO: Refresh MIDI device list
+    }
+    
+    ImGui::Unindent();
+    ImGui::Spacing();
+    
+    // Control mapping section
+    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Control Mapping:");
+    ImGui::Indent();
+    
+    ImGui::Text("Jog Wheels: Video Scrubbing");
+    ImGui::Text("Crossfader: Video Mix Control");
+    ImGui::Text("Play/Pause: Transport Control");
+    ImGui::Text("Effects Knobs: Video Effects Parameters");
+    
+    ImGui::Unindent();
+    ImGui::Spacing();
+    
+    // Status section
+    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Status:");
+    ImGui::Indent();
+    
+    ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "● Disconnected");
+    ImGui::Text("Ready to configure MIDI mapping");
+    
+    ImGui::Unindent();
+    
+    // Configuration buttons
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+    
+    if (ImGui::Button("Start MIDI Mapping")) {
+        // TODO: Begin MIDI mapping process
+    }
+    
+    ImGui::SameLine();
+    if (ImGui::Button("Load Preset")) {
+        // TODO: Load MIDI preset
+    }
+    
+    ImGui::SameLine();
+    if (ImGui::Button("Save Preset")) {
+        // TODO: Save MIDI preset
     }
 }
 

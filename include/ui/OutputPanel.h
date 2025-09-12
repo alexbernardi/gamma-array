@@ -35,11 +35,15 @@ private:
     bool _showMonitoring;
     float _outputLevel;
     
-    // UI helpers
+    // UI helpers - existing output functionality
     void renderVideoOutput();
     void renderWaveformOverlay();
     void renderMonitoringInfo();
     void renderOutputControls();
+    
+    // Tab rendering methods
+    void renderOutputTab();
+    void renderMidiSetupTab();
 };
 
 } // namespace ui
