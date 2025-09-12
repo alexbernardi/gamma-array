@@ -18,7 +18,7 @@ Usage: .\dev.ps1 [action] [options]
 
 Actions:
   setup       - Install dependencies and configure project
-  build       - Build the project (Debug by default)
+  build       - Build the project (Release by default due to RtMidi compatibility)
   run         - Build and run the application
   clean       - Clean build artifacts
   rebuild     - Clean and rebuild
@@ -28,14 +28,17 @@ Actions:
 
 Options:
   -Clean      - Clean before building
-  -Release    - Use Release configuration instead of Debug
+  -Release    - Explicitly use Release configuration
 
 Examples:
   .\dev.ps1 setup                    # First-time setup
-  .\dev.ps1 build                    # Quick build
+  .\dev.ps1 build                    # Quick build (Release)
   .\dev.ps1 run                      # Build and run
-  .\dev.ps1 build -Release           # Release build
+  .\dev.ps1 build -Release           # Explicit Release build
   .\dev.ps1 rebuild -Clean           # Full rebuild
+
+Note: Currently using Release builds by default due to RtMidi library configuration.
+Debug builds will be available once RtMidi Debug libraries are built.
 
 "@ -ForegroundColor Green
 }
@@ -59,7 +62,8 @@ function Invoke-Setup {
 }
 
 function Invoke-Build {
-    $Config = if ($Release) { "Release" } else { "Debug" }
+    # Default to Release due to RtMidi library compatibility
+    $Config = if ($Release) { "Release" } else { "Release" }
     
     if ($Clean) {
         Write-Host "Cleaning build..." -ForegroundColor Yellow
@@ -67,6 +71,11 @@ function Invoke-Build {
             Remove-Item -Recurse -Force build
         }
         cmake -B build -S . -G "Visual Studio 17 2022" -A x64
+    }
+    
+    # Warn about Debug build issues
+    if (-not $Release) {
+        Write-Host "Note: Currently using Release build due to RtMidi library configuration" -ForegroundColor Yellow
     }
     
     Write-Host "Building Gamma Array ($Config)..." -ForegroundColor Yellow
@@ -80,13 +89,15 @@ function Invoke-Build {
 }
 
 function Invoke-Run {
-    $Config = if ($Release) { "Release" } else { "Debug" }
+    # Default to Release due to RtMidi library compatibility
+    $Config = if ($Release) { "Release" } else { "Release" }
     
     # Build first
     Invoke-Build
     
     if ($LASTEXITCODE -eq 0) {
-        $ExeName = if ($Release) { "GammaArray.exe" } else { "GammaArray_d.exe" }
+        # Always use GammaArray.exe since we're defaulting to Release
+        $ExeName = "GammaArray.exe"
         $ExePath = "build\bin\$Config\$ExeName"
         
         if (Test-Path $ExePath) {
