@@ -97,14 +97,16 @@ void OutputPanel::renderVideoOutput() {
     ImVec2 contentSize = ImGui::GetContentRegionAvail();
     contentSize.y -= 60; // Leave space for overlays
     
-    // Draw video placeholder
-    ImVec2 videoStart = ImGui::GetCursorScreenPos();
+    // Create an invisible button to define the video area
+    ImGui::InvisibleButton("VideoArea", contentSize);
+    
+    // Draw video placeholder using draw list
+    ImVec2 videoStart = ImGui::GetItemRectMin();
+    ImVec2 videoEnd = ImGui::GetItemRectMax();
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     
     // Background
-    drawList->AddRectFilled(videoStart, 
-                           ImVec2(videoStart.x + contentSize.x, videoStart.y + contentSize.y),
-                           IM_COL32(20, 20, 20, 255));
+    drawList->AddRectFilled(videoStart, videoEnd, IM_COL32(20, 20, 20, 255));
     
     // Video placeholder content
     ImVec2 center = ImVec2(videoStart.x + contentSize.x * 0.5f, 
@@ -126,27 +128,24 @@ void OutputPanel::renderVideoOutput() {
     ImVec2 textPos2 = ImVec2(center.x - 120, center.y + 80);
     drawList->AddText(textPos2, IM_COL32(150, 150, 150, 255), 
                      "Awaiting video input...");
-    
-    // Advance cursor past video area
-    ImGui::SetCursorPos(ImVec2(contentStart.x, contentStart.y + contentSize.y));
-    // Add a dummy item to satisfy ImGui boundary requirements
-    ImGui::Dummy(ImVec2(0, 0));
 }
 
 void OutputPanel::renderWaveformOverlay() {
     ImGui::Text("[WAV] Audio Waveform");
     ImGui::SameLine();
     
-    // Simple waveform visualization
-    ImVec2 waveStart = ImGui::GetCursorScreenPos();
+    // Simple waveform visualization with proper ImGui item
     ImVec2 waveSize = ImVec2(ImGui::GetContentRegionAvail().x - 100, 30);
     
+    // Create an invisible button for the waveform area
+    ImGui::InvisibleButton("WaveformArea", waveSize);
+    
+    ImVec2 waveStart = ImGui::GetItemRectMin();
+    ImVec2 waveEnd = ImGui::GetItemRectMax();
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     
     // Waveform background
-    drawList->AddRectFilled(waveStart, 
-                           ImVec2(waveStart.x + waveSize.x, waveStart.y + waveSize.y),
-                           IM_COL32(15, 15, 15, 255));
+    drawList->AddRectFilled(waveStart, waveEnd, IM_COL32(15, 15, 15, 255));
     
     // Draw simple waveform
     for (int i = 0; i < static_cast<int>(waveSize.x); i += 2) {
@@ -159,7 +158,7 @@ void OutputPanel::renderWaveformOverlay() {
                          IM_COL32(0, 255, 100, 180), 1.0f);
     }
     
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
+    ImGui::NewLine();
 }
 
 void OutputPanel::renderMonitoringInfo() {
