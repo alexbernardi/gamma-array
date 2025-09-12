@@ -33,10 +33,8 @@ namespace {
     void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
         Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
         if (app) {
-            // ESC key to exit fullscreen/close application
-            if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-                glfwSetWindowShouldClose(window, GLFW_TRUE);
-            }
+            // TODO: Handle keyboard input for VJ controls
+            // ESC key functionality removed per user request
         }
     }
 }
@@ -356,13 +354,13 @@ void Application::render() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // Always show the navigation bar for consistent UI
-    renderNavigationBar();
-
-    // Render workspace panels
+    // Render workspace panels first
     if (_workspaceManager) {
         _workspaceManager->render();
     }
+
+    // Render navigation bar last so it appears on top
+    renderNavigationBar();
 
     // TODO: Render video effects
 
@@ -391,7 +389,9 @@ void Application::renderNavigationBar() {
                                ImGuiWindowFlags_NoMove | 
                                ImGuiWindowFlags_NoScrollbar | 
                                ImGuiWindowFlags_NoSavedSettings |
-                               ImGuiWindowFlags_MenuBar;
+                               ImGuiWindowFlags_MenuBar |
+                               ImGuiWindowFlags_NoBringToFrontOnFocus |
+                               ImGuiWindowFlags_NoNavFocus;
     
     if (ImGui::Begin("NavigationBar", nullptr, navFlags)) {
         if (ImGui::BeginMenuBar()) {
