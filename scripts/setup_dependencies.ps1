@@ -144,9 +144,9 @@ if ($UseVcpkg -and -not (Test-Path "imgui")) {
     Write-Host "Installing ImGui manually..." -ForegroundColor Yellow
     try {
         git clone https://github.com/ocornut/imgui.git
-        Write-Host "✓ ImGui installed" -ForegroundColor Green
+        Write-Host "[OK] ImGui installed" -ForegroundColor Green
     } catch {
-        Write-Host "✗ Failed to install ImGui: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "[X] Failed to install ImGui: $($_.Exception.Message)" -ForegroundColor Red
     }
 }
 
@@ -155,6 +155,6 @@ Set-Location ..
 Write-Host "=== Dependencies Setup Complete ===" -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "1. Configure the project: cmake -B build -S . -G `"Visual Studio 17 2022`" -A x64"
+Write-Host "1. Configure the project: cmake -B build -S . -G 'Visual Studio 17 2022' -A x64"
 Write-Host "2. Build the project: cmake --build build --config Debug"
 Write-Host "3. See BUILD.md for detailed build instructions"

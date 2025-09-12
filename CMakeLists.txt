@@ -21,7 +21,29 @@ include_directories(${CMAKE_SOURCE_DIR}/libs)
 
 # Find required packages
 find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
+
+# Set custom paths for our manually installed libraries
+set(GLFW_ROOT ${CMAKE_SOURCE_DIR}/libs/glfw)
+set(RTMIDI_ROOT ${CMAKE_SOURCE_DIR}/libs/rtmidi)
+set(PORTAUDIO_ROOT ${CMAKE_SOURCE_DIR}/libs/portaudio)
+
+# Find GLFW
+find_library(GLFW_LIBRARY
+    NAMES glfw3 glfw
+    PATHS ${GLFW_ROOT}/lib-vc2022
+    NO_DEFAULT_PATH
+)
+
+if(GLFW_LIBRARY)
+    add_library(glfw STATIC IMPORTED)
+    set_target_properties(glfw PROPERTIES
+        IMPORTED_LOCATION ${GLFW_LIBRARY}
+        INTERFACE_INCLUDE_DIRECTORIES ${GLFW_ROOT}/include
+    )
+    message(STATUS "Found GLFW: ${GLFW_LIBRARY}")
+else()
+    message(FATAL_ERROR "GLFW library not found")
+endif()
 
 # Platform-specific settings
 if(WIN32)
@@ -57,18 +79,39 @@ if(EXISTS ${IMGUI_DIR})
     add_library(imgui STATIC ${IMGUI_SOURCES})
     target_include_directories(imgui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends)
     target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
+    message(STATUS "Found ImGui: ${IMGUI_DIR}")
 endif()
 
 # RtMidi setup
-set(RTMIDI_DIR ${LIBS_DIR}/rtmidi)
-if(EXISTS ${RTMIDI_DIR})
-    add_subdirectory(${RTMIDI_DIR})
+find_library(RTMIDI_LIBRARY
+    NAMES rtmidi
+    PATHS ${RTMIDI_ROOT}/build/Release
+    NO_DEFAULT_PATH
+)
+
+if(RTMIDI_LIBRARY)
+    add_library(rtmidi STATIC IMPORTED)
+    set_target_properties(rtmidi PROPERTIES
+        IMPORTED_LOCATION ${RTMIDI_LIBRARY}
+        INTERFACE_INCLUDE_DIRECTORIES ${RTMIDI_ROOT}
+    )
+    message(STATUS "Found RtMidi: ${RTMIDI_LIBRARY}")
 endif()
 
 # PortAudio setup
-set(PORTAUDIO_DIR ${LIBS_DIR}/portaudio)
-if(EXISTS ${PORTAUDIO_DIR})
-    add_subdirectory(${PORTAUDIO_DIR})
+find_library(PORTAUDIO_LIBRARY
+    NAMES portaudio
+    PATHS ${PORTAUDIO_ROOT}/build/Release
+    NO_DEFAULT_PATH
+)
+
+if(PORTAUDIO_LIBRARY)
+    add_library(portaudio STATIC IMPORTED)
+    set_target_properties(portaudio PROPERTIES
+        IMPORTED_LOCATION ${PORTAUDIO_LIBRARY}
+        INTERFACE_INCLUDE_DIRECTORIES ${PORTAUDIO_ROOT}/include
+    )
+    message(STATUS "Found PortAudio: ${PORTAUDIO_LIBRARY}")
 endif()
 
 # Collect source files
@@ -96,13 +139,11 @@ if(TARGET imgui)
     target_link_libraries(gamma_array imgui)
 endif()
 
-if(TARGET rtmidi)
+if(RTMIDI_LIBRARY)
     target_link_libraries(gamma_array rtmidi)
 endif()
 
-if(TARGET portaudio_static)
-    target_link_libraries(gamma_array portaudio_static)
-elseif(TARGET portaudio)
+if(PORTAUDIO_LIBRARY)
     target_link_libraries(gamma_array portaudio)
 endif()
 

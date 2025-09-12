@@ -73,9 +73,9 @@ function Invoke-Build {
     cmake --build build --config $Config
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ Build successful!" -ForegroundColor Green
+        Write-Host "[OK] Build successful!" -ForegroundColor Green
     } else {
-        Write-Host "✗ Build failed!" -ForegroundColor Red
+        Write-Host "[X] Build failed!" -ForegroundColor Red
     }
 }
 
@@ -102,7 +102,7 @@ function Invoke-Clean {
     Write-Host "Cleaning build artifacts..." -ForegroundColor Yellow
     if (Test-Path "build") {
         Remove-Item -Recurse -Force build
-        Write-Host "✓ Build directory cleaned" -ForegroundColor Green
+        Write-Host "[OK] Build directory cleaned" -ForegroundColor Green
     }
 }
 
@@ -124,15 +124,15 @@ function Show-Dependencies {
     )
     
     foreach ($dep in $deps) {
-        $status = if (Test-Path $dep.Path) { "✓ Installed" } else { "✗ Missing" }
+        $status = if (Test-Path $dep.Path) { "[OK] Installed" } else { "[X] Missing" }
         $color = if (Test-Path $dep.Path) { "Green" } else { "Red" }
         Write-Host "  $($dep.Name): $status" -ForegroundColor $color
     }
     
     if (Test-Path "build\CMakeCache.txt") {
-        Write-Host "  CMake: ✓ Configured" -ForegroundColor Green
+        Write-Host "  CMake: [OK] Configured" -ForegroundColor Green
     } else {
-        Write-Host "  CMake: ✗ Not configured" -ForegroundColor Red
+        Write-Host "  CMake: [X] Not configured" -ForegroundColor Red
     }
 }
 

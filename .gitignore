@@ -107,6 +107,12 @@ libs/*/build/
 libs/*/cmake/
 libs/*/.git/
 
+# Complete library directories - can be regenerated with setup script
+libs/glfw/
+libs/imgui/
+libs/rtmidi/
+libs/portaudio/
+
 # Generated documentation
 docs/html/
 docs/latex/
