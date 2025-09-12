@@ -16,8 +16,13 @@ OutputPanel::OutputPanel()
 void OutputPanel::render() {
     if (!_visible) return;
 
+    // Safety check for ImGui context
+    if (!ImGui::GetCurrentContext()) return;
+
     // Get layout dimensions from workspace manager
     ImGuiViewport* viewport = ImGui::GetMainViewport();
+    if (!viewport) return; // Safety check
+    
     float navBarHeight = _workspaceManager ? _workspaceManager->getNavBarHeight() : 0.0f;
     float timelineHeight = _workspaceManager ? _workspaceManager->getTimelineHeight() : 120.0f;
     float sidebarWidth = _workspaceManager ? _workspaceManager->getSidebarWidth() : 300.0f;
@@ -63,16 +68,27 @@ void OutputPanel::update(float deltaTime) {
 }
 
 void OutputPanel::renderOutputControls() {
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f)); // Cyan
-    ImGui::Text("[OUT] Main Output");
-    ImGui::PopStyleColor();
+    if (!ImGui::GetCurrentContext()) return; // Safety check
     
-    ImGui::SameLine();
-    ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 200);
-    
-    ImGui::Checkbox("Waveform", &_showWaveform);
-    ImGui::SameLine();
-    ImGui::Checkbox("Monitor", &_showMonitoring);
+    try {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f)); // Cyan
+        ImGui::Text("[OUT] Main Output");
+        ImGui::PopStyleColor();
+        
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 200);
+        
+        if (ImGui::Checkbox("Waveform", &_showWaveform)) {
+            // Checkbox changed - no special handling needed for now
+        }
+        ImGui::SameLine();
+        if (ImGui::Checkbox("Monitor", &_showMonitoring)) {
+            // Checkbox changed - no special handling needed for now
+        }
+    } catch (...) {
+        // Fallback rendering if there's any issue
+        ImGui::Text("[OUT] Output Controls (Error)");
+    }
 }
 
 void OutputPanel::renderVideoOutput() {
@@ -113,6 +129,8 @@ void OutputPanel::renderVideoOutput() {
     
     // Advance cursor past video area
     ImGui::SetCursorPos(ImVec2(contentStart.x, contentStart.y + contentSize.y));
+    // Add a dummy item to satisfy ImGui boundary requirements
+    ImGui::Dummy(ImVec2(0, 0));
 }
 
 void OutputPanel::renderWaveformOverlay() {
@@ -145,9 +163,18 @@ void OutputPanel::renderWaveformOverlay() {
 }
 
 void OutputPanel::renderMonitoringInfo() {
-    ImGui::Text("[INFO] Output Level: %.1f%%", _outputLevel * 100.0f);
-    ImGui::SameLine();
-    ImGui::Text("| FPS: 60 | Res: 3440x1440 | Format: RGB24");
+    if (!ImGui::GetCurrentContext()) {
+        return; // Safety check for ImGui context
+    }
+    
+    try {
+        ImGui::Text("[INFO] Output Level: %.1f%%", _outputLevel * 100.0f);
+        ImGui::SameLine();
+        ImGui::Text("| FPS: 60 | Res: 3440x1440 | Format: RGB24");
+    } catch (...) {
+        // Fallback if there's any rendering issue
+        ImGui::Text("[INFO] Monitoring data unavailable");
+    }
 }
 
 } // namespace ui
