@@ -1,4 +1,5 @@
 #include "ui/WorkspaceManager.h"
+#include "core/Application.h"
 #include "imgui.h"
 
 namespace gamma {
@@ -16,7 +17,7 @@ WorkspaceManager::~WorkspaceManager() {
     shutdown();
 }
 
-void WorkspaceManager::initialize() {
+void WorkspaceManager::initialize(gamma::core::Application* application) {
     // Create panel instances
     _timelinePanel = std::make_unique<TimelinePanel>();
     _outputPanel = std::make_unique<OutputPanel>();
@@ -28,6 +29,11 @@ void WorkspaceManager::initialize() {
     _outputPanel->setWorkspaceManager(this);
     _importPanel->setWorkspaceManager(this);
     _effectsPanel->setWorkspaceManager(this);
+    
+    // Set application reference on OutputPanel for MIDI access
+    if (application && _outputPanel) {
+        _outputPanel->setApplication(application);
+    }
     
     // Initialize panels
     _timelinePanel->setVisible(true);

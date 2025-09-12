@@ -3,6 +3,11 @@
 #include "ui/WorkspacePanel.h"
 
 namespace gamma {
+namespace core { class Application; }
+namespace midi { class MidiManager; }
+}
+
+namespace gamma {
 namespace ui {
 
 /**
@@ -18,6 +23,12 @@ public:
     virtual ~OutputPanel() = default;
 
     /**
+     * @brief Set reference to the application for accessing subsystems
+     * @param app Pointer to the main application instance
+     */
+    void setApplication(gamma::core::Application* app);
+
+    /**
      * @brief Render the output panel UI
      * Shows video output, waveform overlay, and monitoring info
      */
@@ -30,10 +41,17 @@ public:
     void update(float deltaTime) override;
 
 private:
+    // Application reference for accessing subsystems
+    gamma::core::Application* _application;
+    
     // Output state
     bool _showWaveform;
     bool _showMonitoring;
     float _outputLevel;
+    
+    // MIDI state
+    int _selectedDevice;
+    bool _isConnected;
     
     // UI helpers - existing output functionality
     void renderVideoOutput();
@@ -44,6 +62,13 @@ private:
     // Tab rendering methods
     void renderOutputTab();
     void renderMidiSetupTab();
+    
+    // MIDI UI helpers
+    void renderMidiDeviceSelection();
+    void renderMidiControlMapping();
+    void renderMidiStatus();
+    void renderMidiSignalLog();
+    void renderMidiConfigButtons();
 };
 
 } // namespace ui

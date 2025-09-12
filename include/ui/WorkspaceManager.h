@@ -8,6 +8,10 @@
 #include <memory>
 
 namespace gamma {
+namespace core { class Application; }
+}
+
+namespace gamma {
 namespace ui {
 
 class WorkspaceManager {
@@ -15,7 +19,7 @@ public:
     WorkspaceManager();
     ~WorkspaceManager();
     
-    void initialize();
+    void initialize(gamma::core::Application* application = nullptr);
     void render();
     void update(float deltaTime);
     void shutdown();

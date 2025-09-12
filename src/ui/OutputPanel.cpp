@@ -1,16 +1,26 @@
 #include "ui/OutputPanel.h"
 #include "ui/WorkspaceManager.h"
+#include "core/Application.h"
+#include "midi/MidiManager.h"
 #include "imgui.h"
 #include <cmath>
+#include <iostream>
 
 namespace gamma {
 namespace ui {
 
 OutputPanel::OutputPanel()
     : WorkspacePanel("Output")
+    , _application(nullptr)
     , _showWaveform(true)
     , _showMonitoring(true)
-    , _outputLevel(0.75f) {
+    , _outputLevel(0.75f)
+    , _selectedDevice(0)
+    , _isConnected(false) {
+}
+
+void OutputPanel::setApplication(gamma::core::Application* app) {
+    _application = app;
 }
 
 void OutputPanel::render() {
@@ -201,69 +211,195 @@ void OutputPanel::renderOutputTab() {
 void OutputPanel::renderMidiSetupTab() {
     // MIDI Control Setup tab content
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f)); // Cyan
-    ImGui::Text("MIDI Control Setup");
+    ImGui::Text("MIDI Control Setup - DDJ-REV1");
     ImGui::PopStyleColor();
     
     ImGui::Separator();
     
-    // Placeholder content for MIDI setup
-    ImGui::Text("MIDI Controller Configuration");
-    ImGui::Spacing();
+    // Get MIDI manager if available
+    gamma::midi::MidiManager* midiManager = nullptr;
+    if (_application) {
+        midiManager = _application->getMidiManager();
+    }
     
-    // Device selection section
+    // Create child regions for organized layout
+    ImVec2 availableSize = ImGui::GetContentRegionAvail();
+    float leftPanelWidth = availableSize.x * 0.4f;
+    float rightPanelWidth = availableSize.x * 0.6f - 10.0f; // 10px spacing
+    
+    // Left panel - Device and control info
+    if (ImGui::BeginChild("MidiLeftPanel", ImVec2(leftPanelWidth, 0), true)) {
+        renderMidiDeviceSelection();
+        ImGui::Spacing();
+        renderMidiControlMapping();
+        ImGui::Spacing();
+        renderMidiStatus();
+        ImGui::Spacing();
+        renderMidiConfigButtons();
+    }
+    ImGui::EndChild();
+    
+    ImGui::SameLine();
+    
+    // Right panel - Signal log
+    if (ImGui::BeginChild("MidiRightPanel", ImVec2(rightPanelWidth, 0), true)) {
+        renderMidiSignalLog();
+    }
+    ImGui::EndChild();
+}
+
+void OutputPanel::renderMidiDeviceSelection() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Device Selection:");
-    ImGui::Indent();
     
-    static int selectedDevice = 0;
-    const char* devices[] = { "No devices detected", "Pioneer DDJ-REV1", "Generic MIDI Controller" };
-    ImGui::Combo("MIDI Device", &selectedDevice, devices, IM_ARRAYSIZE(devices));
+    // Get available devices from MIDI manager
+    gamma::midi::MidiManager* midiManager = nullptr;
+    if (_application) {
+        midiManager = _application->getMidiManager();
+    }
+    
+    std::vector<std::string> deviceNames;
+    if (midiManager) {
+        deviceNames = midiManager->getAvailableDevices();
+    }
+    
+    if (deviceNames.empty()) {
+        deviceNames.push_back("No devices detected");
+    }
+    
+    // Convert to const char* array for ImGui combo
+    std::vector<const char*> deviceCStrs;
+    for (const auto& name : deviceNames) {
+        deviceCStrs.push_back(name.c_str());
+    }
+    
+    if (ImGui::Combo("MIDI Device", &_selectedDevice, deviceCStrs.data(), static_cast<int>(deviceCStrs.size()))) {
+        // Device selection changed
+        _isConnected = false;
+    }
     
     ImGui::SameLine();
     if (ImGui::Button("Refresh")) {
-        // TODO: Refresh MIDI device list
+        if (midiManager) {
+            midiManager->refreshDevices();
+        }
     }
     
-    ImGui::Unindent();
-    ImGui::Spacing();
+    ImGui::SameLine();
+    if (ImGui::Button(_isConnected ? "Disconnect" : "Connect")) {
+        if (midiManager && !deviceNames.empty() && _selectedDevice < static_cast<int>(deviceNames.size())) {
+            if (!_isConnected) {
+                std::string deviceName = deviceNames[_selectedDevice];
+                if (deviceName != "No devices detected") {
+                    _isConnected = midiManager->connectToDevice(deviceName);
+                }
+            } else {
+                midiManager->disconnect();
+                _isConnected = false;
+            }
+        }
+    }
+}
+
+void OutputPanel::renderMidiControlMapping() {
+    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "DDJ-REV1 Control Mapping:");
     
-    // Control mapping section
-    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Control Mapping:");
-    ImGui::Indent();
-    
-    ImGui::Text("Jog Wheels: Video Scrubbing");
-    ImGui::Text("Crossfader: Video Mix Control");
-    ImGui::Text("Play/Pause: Transport Control");
-    ImGui::Text("Effects Knobs: Video Effects Parameters");
-    
-    ImGui::Unindent();
-    ImGui::Spacing();
-    
-    // Status section
+    ImGui::Text("• Jog Wheels: Video Scrubbing");
+    ImGui::Text("• Crossfader: Video Mix Control");
+    ImGui::Text("• Play/Pause: Transport Control");
+    ImGui::Text("• Effects Knobs: Video Effects Parameters");
+    ImGui::Text("• Channel Faders: Layer Opacity");
+    ImGui::Text("• Cue Points: Scene Triggers");
+}
+
+void OutputPanel::renderMidiStatus() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Status:");
-    ImGui::Indent();
     
-    ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "● Disconnected");
-    ImGui::Text("Ready to configure MIDI mapping");
+    if (_isConnected) {
+        ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "● Connected");
+        ImGui::Text("Ready for MIDI input");
+    } else {
+        ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "● Disconnected");
+        ImGui::Text("Select and connect a device");
+    }
+}
+
+void OutputPanel::renderMidiSignalLog() {
+    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "MIDI Signal Log:");
     
-    ImGui::Unindent();
+    // Create scrolling region for MIDI messages
+    if (ImGui::BeginChild("MidiLog", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar)) {
+        gamma::midi::MidiManager* midiManager = nullptr;
+        if (_application) {
+            midiManager = _application->getMidiManager();
+        }
+        
+        if (midiManager) {
+            auto recentMessages = midiManager->getRecentMessages();
+            
+            if (recentMessages.empty()) {
+                ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No MIDI messages received yet...");
+                ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "Connect a device and move some controls!");
+            } else {
+                // Display messages in reverse order (newest first)
+                for (auto it = recentMessages.rbegin(); it != recentMessages.rend(); ++it) {
+                    const auto& msg = *it;
+                    
+                    // Color code by message type
+                    ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // Default white
+                    if (!msg.data.empty()) {
+                        unsigned char msgType = msg.data[0] & 0xF0; // Extract message type
+                        
+                        if (msgType == 0x90 || msgType == 0x80) { // Note on/off
+                            color = ImVec4(0.3f, 1.0f, 0.3f, 1.0f); // Green for notes
+                        } else if (msgType == 0xB0) { // Control change
+                            color = ImVec4(0.3f, 0.8f, 1.0f, 1.0f); // Cyan for CCs
+                        } else if (msgType == 0xE0) { // Pitch bend
+                            color = ImVec4(1.0f, 0.8f, 0.3f, 1.0f); // Orange for pitch bend
+                        }
+                    }
+                    
+                    // Format timestamp as string
+                    char timeStr[32];
+                    snprintf(timeStr, sizeof(timeStr), "%.3f", msg.timestamp);
+                    
+                    ImGui::TextColored(color, "[%s] %s", 
+                                      timeStr, 
+                                      msg.description.c_str());
+                }
+                
+                // Auto-scroll to bottom for new messages
+                if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+                    ImGui::SetScrollHereY(1.0f);
+                }
+            }
+        } else {
+            ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "MIDI system not available");
+        }
+    }
+    ImGui::EndChild();
     
-    // Configuration buttons
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Spacing();
-    
-    if (ImGui::Button("Start MIDI Mapping")) {
-        // TODO: Begin MIDI mapping process
+    // Clear log button
+    if (ImGui::Button("Clear Log")) {
+        if (_application && _application->getMidiManager()) {
+            _application->getMidiManager()->clearMessageHistory();
+        }
+    }
+}
+
+void OutputPanel::renderMidiConfigButtons() {
+    if (ImGui::Button("Start Learning Mode", ImVec2(-1, 0))) {
+        // TODO: Begin MIDI learning mode
+        std::cout << "MIDI learning mode activated" << std::endl;
     }
     
-    ImGui::SameLine();
-    if (ImGui::Button("Load Preset")) {
-        // TODO: Load MIDI preset
+    if (ImGui::Button("Load DDJ-REV1 Preset", ImVec2(-1, 0))) {
+        // TODO: Load DDJ-REV1 preset mapping
+        std::cout << "Loading DDJ-REV1 preset..." << std::endl;
     }
     
-    ImGui::SameLine();
-    if (ImGui::Button("Save Preset")) {
-        // TODO: Save MIDI preset
+    if (ImGui::Button("Save Current Mapping", ImVec2(-1, 0))) {
+        // TODO: Save current MIDI mapping
+        std::cout << "Saving MIDI mapping..." << std::endl;
     }
 }
 

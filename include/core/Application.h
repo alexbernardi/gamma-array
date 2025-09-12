@@ -9,6 +9,9 @@ namespace gamma {
 namespace ui {
 class WorkspaceManager;
 }
+namespace midi {
+class MidiManager;
+}
 
 namespace core {
 
@@ -49,6 +52,12 @@ public:
      */
     bool shouldRun() const;
 
+    /**
+     * @brief Get MIDI manager instance
+     * @return pointer to MIDI manager or nullptr if not initialized
+     */
+    gamma::midi::MidiManager* getMidiManager() const { return _midiManager.get(); }
+
 private:
     bool _initialized;
     bool _shouldRun;
@@ -57,6 +66,9 @@ private:
     
     // UI Manager
     std::unique_ptr<gamma::ui::WorkspaceManager> _workspaceManager;
+    
+    // MIDI Manager
+    std::unique_ptr<gamma::midi::MidiManager> _midiManager;
 
     // Core subsystem initialization methods
     bool initializeWindow();

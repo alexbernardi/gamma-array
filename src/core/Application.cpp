@@ -1,5 +1,6 @@
 #include "core/Application.h"
 #include "ui/WorkspaceManager.h"
+#include "midi/MidiManager.h"
 #include <iostream>
 #include <chrono>
 
@@ -44,7 +45,8 @@ Application::Application()
     , _shouldRun(false)
     , _fullscreen(false)  // Default to windowed mode
     , _window(nullptr)
-    , _workspaceManager(nullptr) {
+    , _workspaceManager(nullptr)
+    , _midiManager(nullptr) {
 }
 
 Application::~Application() {
@@ -324,11 +326,17 @@ bool Application::initializeSubsystems() {
 
     // Initialize workspace manager
     _workspaceManager = std::make_unique<gamma::ui::WorkspaceManager>();
-    _workspaceManager->initialize();
+    _workspaceManager->initialize(this);
+
+    // Initialize MIDI system
+    _midiManager = std::make_unique<gamma::midi::MidiManager>();
+    if (!_midiManager->initialize()) {
+        std::cerr << "Warning: MIDI system initialization failed" << std::endl;
+        // Continue without MIDI - not a fatal error
+    }
 
     // TODO: Initialize rendering engine
     // TODO: Initialize audio engine  
-    // TODO: Initialize MIDI system
 
     std::cout << "Core subsystems initialized" << std::endl;
     return true;
@@ -345,7 +353,11 @@ void Application::update(float deltaTime) {
         _workspaceManager->update(deltaTime);
     }
 
-    // TODO: Update MIDI input
+    // Update MIDI input
+    if (_midiManager) {
+        _midiManager->update();
+    }
+
     // TODO: Update audio processing
 }
 
@@ -516,13 +528,18 @@ void Application::cleanupImGui() {
 void Application::cleanupSubsystems() {
     std::cout << "Cleaning up subsystems..." << std::endl;
     
+    // Cleanup MIDI system
+    if (_midiManager) {
+        _midiManager->shutdown();
+        _midiManager.reset();
+    }
+    
     // Cleanup workspace manager
     if (_workspaceManager) {
         _workspaceManager->shutdown();
         _workspaceManager.reset();
     }
 
-    // TODO: Cleanup MIDI system
     // TODO: Cleanup audio engine
     // TODO: Cleanup rendering engine
 }
