@@ -154,6 +154,10 @@ void MidiManager::clearMessageLog() {
     _messageLog.clear();
 }
 
+void MidiManager::setJogWheelCallback(std::function<void(int, float)> callback) {
+    _jogWheelCallback = callback;
+}
+
 void MidiManager::update() {
     // RtMidi handles input via callbacks, so not much to do here
     // Could be used for periodic cleanup or status updates
@@ -230,6 +234,43 @@ void MidiManager::processMidiMessage(const std::vector<unsigned char>& message, 
     }
 
     std::string description = describeMidiMessage(message);
+    
+    // Check for jog wheel messages and call callback if set
+    if (_jogWheelCallback && message.size() >= 3) {
+        unsigned char status = message[0];
+        unsigned char cc = message[1];
+        unsigned char value = message[2];
+        
+        // DDJ-REV1 jog wheel mappings
+        bool isJogMessage = false;
+        int channel = 0;
+        float deltaRotation = 0.0f;
+        
+        if (status == 0xB0) { // Channel 1 CC
+            if (cc == 0x21 || cc == 0x22) { // CC21 or CC22 (finger on/off)
+                channel = 1;
+                isJogMessage = true;
+            }
+        } else if (status == 0xB1) { // Channel 2 CC
+            if (cc == 0x21 || cc == 0x22) { // CC21 or CC22 (finger on/off)
+                channel = 2;
+                isJogMessage = true;
+            }
+        }
+        
+        if (isJogMessage) {
+            // Determine rotation direction and amount
+            if (value == 0x41) {
+                deltaRotation = 0.2f; // Clockwise
+            } else if (value == 0x3F) {
+                deltaRotation = -0.2f; // Counter-clockwise
+            }
+            
+            if (deltaRotation != 0.0f) {
+                _jogWheelCallback(channel, deltaRotation);
+            }
+        }
+    }
     
     // Add to message log
     {

@@ -54,7 +54,8 @@ private:
     bool _isConnected;
     
     // Jog wheel state
-    float _jogWheelRotation;  // Current rotation in degrees (0-360)
+    float _jogWheelLeftRotation;   // Left jog wheel rotation in degrees (0-360)
+    float _jogWheelRightRotation;  // Right jog wheel rotation in degrees (0-360)
     
     // UI helpers - existing output functionality
     void renderVideoOutput();
@@ -74,7 +75,7 @@ private:
     void renderMidiConfigButtons();
     
     // Jog wheel control
-    void updateJogWheelRotation(float deltaRotation);
+    void updateJogWheelRotation(int channel, float deltaRotation); // channel 1=left, 2=right
 };
 
 } // namespace ui

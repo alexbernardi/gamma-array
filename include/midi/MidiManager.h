@@ -111,6 +111,12 @@ public:
      */
     void update();
 
+    /**
+     * @brief Set callback for jog wheel rotation events
+     * @param callback Function to call when jog wheel moves (channel, deltaRotation)
+     */
+    void setJogWheelCallback(std::function<void(int, float)> callback);
+
 private:
     std::unique_ptr<RtMidiIn> _midiIn;
     bool _isInitialized;
@@ -122,6 +128,9 @@ private:
     std::deque<MidiMessage> _messageLog;
     std::mutex _messageLogMutex;
     static const size_t MAX_LOG_SIZE = 1000;
+
+    // Callbacks
+    std::function<void(int, float)> _jogWheelCallback;
 
     /**
      * @brief Static callback for MIDI input

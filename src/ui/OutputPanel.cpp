@@ -21,11 +21,20 @@ OutputPanel::OutputPanel()
     , _outputLevel(0.75f)
     , _selectedDevice(0)
     , _isConnected(false)
-    , _jogWheelRotation(0.0f) {
+    , _jogWheelLeftRotation(0.0f)
+    , _jogWheelRightRotation(0.0f) {
 }
 
 void OutputPanel::setApplication(gamma::core::Application* app) {
     _application = app;
+    
+    // Set up jog wheel callback with MIDI manager
+    if (_application && _application->getMidiManager()) {
+        auto callback = [this](int channel, float deltaRotation) {
+            this->updateJogWheelRotation(channel, deltaRotation);
+        };
+        _application->getMidiManager()->setJogWheelCallback(callback);
+    }
 }
 
 void OutputPanel::render() {
@@ -308,38 +317,57 @@ void OutputPanel::renderMidiDeviceSelection() {
 void OutputPanel::renderMidiControlMapping() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Jog Wheel Visualization:");
     
-    // Jog wheel visual display
-    ImVec2 center = ImGui::GetCursorScreenPos();
-    center.x += 80; // Center the wheel
-    center.y += 80;
+    // Left jog wheel (Channel 1)
+    ImGui::Text("Left Wheel (Ch1):");
+    ImVec2 leftCenter = ImGui::GetCursorScreenPos();
+    leftCenter.x += 80;
+    leftCenter.y += 80;
     float radius = 60.0f;
     
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     
-    // Draw outer ring
-    drawList->AddCircle(center, radius, IM_COL32(100, 100, 100, 255), 32, 3.0f);
+    // Draw left wheel
+    drawList->AddCircle(leftCenter, radius, IM_COL32(100, 100, 100, 255), 32, 3.0f);
+    drawList->AddCircleFilled(leftCenter, radius - 10, IM_COL32(30, 30, 30, 255), 32);
     
-    // Draw inner circle
-    drawList->AddCircleFilled(center, radius - 10, IM_COL32(30, 30, 30, 255), 32);
-    
-    // Draw rotation indicator
-    float rotationRad = _jogWheelRotation * (M_PI / 180.0f);
-    ImVec2 indicatorPos = ImVec2(
-        center.x + cos(rotationRad - M_PI/2) * (radius - 20),
-        center.y + sin(rotationRad - M_PI/2) * (radius - 20)
+    // Left wheel rotation indicator
+    float leftRotationRad = _jogWheelLeftRotation * (M_PI / 180.0f);
+    ImVec2 leftIndicatorPos = ImVec2(
+        leftCenter.x + cos(leftRotationRad - M_PI/2) * (radius - 20),
+        leftCenter.y + sin(leftRotationRad - M_PI/2) * (radius - 20)
     );
     
-    // Indicator line from center to edge
-    drawList->AddLine(center, indicatorPos, IM_COL32(0, 200, 255, 255), 3.0f);
+    drawList->AddLine(leftCenter, leftIndicatorPos, IM_COL32(0, 200, 255, 255), 3.0f);
+    drawList->AddCircleFilled(leftIndicatorPos, 4.0f, IM_COL32(0, 255, 200, 255), 12);
     
-    // Indicator dot
-    drawList->AddCircleFilled(indicatorPos, 4.0f, IM_COL32(0, 255, 200, 255), 12);
+    // Right jog wheel (Channel 2) - positioned to the right
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 180); // Move to right side
+    ImGui::Text("Right Wheel (Ch2):");
     
-    // Reserve space for the wheel
-    ImGui::Dummy(ImVec2(160, 160));
+    ImVec2 rightCenter = ImGui::GetCursorScreenPos();
+    rightCenter.x += 80;
+    rightCenter.y += 80;
     
-    // Display rotation value
-    ImGui::Text("Rotation: %.1f degrees", _jogWheelRotation);
+    // Draw right wheel
+    drawList->AddCircle(rightCenter, radius, IM_COL32(100, 100, 100, 255), 32, 3.0f);
+    drawList->AddCircleFilled(rightCenter, radius - 10, IM_COL32(30, 30, 30, 255), 32);
+    
+    // Right wheel rotation indicator
+    float rightRotationRad = _jogWheelRightRotation * (M_PI / 180.0f);
+    ImVec2 rightIndicatorPos = ImVec2(
+        rightCenter.x + cos(rightRotationRad - M_PI/2) * (radius - 20),
+        rightCenter.y + sin(rightRotationRad - M_PI/2) * (radius - 20)
+    );
+    
+    drawList->AddLine(rightCenter, rightIndicatorPos, IM_COL32(255, 100, 0, 255), 3.0f);
+    drawList->AddCircleFilled(rightIndicatorPos, 4.0f, IM_COL32(255, 150, 0, 255), 12);
+    
+    // Reserve space for both wheels
+    ImGui::Dummy(ImVec2(380, 160));
+    
+    // Display rotation values
+    ImGui::Text("Left: %.1f°    Right: %.1f°", _jogWheelLeftRotation, _jogWheelRightRotation);
 }
 
 void OutputPanel::renderMidiStatus() {
@@ -393,9 +421,14 @@ void OutputPanel::renderMidiSignalLog() {
                     char timeStr[32];
                     snprintf(timeStr, sizeof(timeStr), "%.3f", msg.timestamp);
                     
-                    ImGui::TextColored(color, "[%s] %s", 
-                                      timeStr, 
-                                      msg.description.c_str());
+                    // Create selectable text for copy/paste functionality
+                    char fullMessage[256];
+                    snprintf(fullMessage, sizeof(fullMessage), "[%s] %s", timeStr, msg.description.c_str());
+                    
+                    // Use Selectable with colored text
+                    ImGui::PushStyleColor(ImGuiCol_Text, color);
+                    ImGui::Selectable(fullMessage, false);
+                    ImGui::PopStyleColor();
                 }
                 
                 // Auto-scroll to bottom for new messages
@@ -419,15 +452,27 @@ void OutputPanel::renderMidiConfigButtons() {
     }
 }
 
-void OutputPanel::updateJogWheelRotation(float deltaRotation) {
-    _jogWheelRotation += deltaRotation;
-    
-    // Keep rotation in 0-360 degree range
-    while (_jogWheelRotation >= 360.0f) {
-        _jogWheelRotation -= 360.0f;
-    }
-    while (_jogWheelRotation < 0.0f) {
-        _jogWheelRotation += 360.0f;
+void OutputPanel::updateJogWheelRotation(int channel, float deltaRotation) {
+    if (channel == 1) {
+        _jogWheelLeftRotation += deltaRotation;
+        
+        // Keep rotation in 0-360 degree range
+        while (_jogWheelLeftRotation >= 360.0f) {
+            _jogWheelLeftRotation -= 360.0f;
+        }
+        while (_jogWheelLeftRotation < 0.0f) {
+            _jogWheelLeftRotation += 360.0f;
+        }
+    } else if (channel == 2) {
+        _jogWheelRightRotation += deltaRotation;
+        
+        // Keep rotation in 0-360 degree range
+        while (_jogWheelRightRotation >= 360.0f) {
+            _jogWheelRightRotation -= 360.0f;
+        }
+        while (_jogWheelRightRotation < 0.0f) {
+            _jogWheelRightRotation += 360.0f;
+        }
     }
 }
 
