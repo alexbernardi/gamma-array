@@ -317,6 +317,9 @@ void OutputPanel::renderMidiDeviceSelection() {
 void OutputPanel::renderMidiControlMapping() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Jog Wheel Visualization:");
     
+    // Create columns for side-by-side wheels
+    ImGui::Columns(2, "JogWheels", false);
+    
     // Left jog wheel (Channel 1)
     ImGui::Text("Left Wheel (Ch1):");
     ImVec2 leftCenter = ImGui::GetCursorScreenPos();
@@ -340,11 +343,15 @@ void OutputPanel::renderMidiControlMapping() {
     drawList->AddLine(leftCenter, leftIndicatorPos, IM_COL32(0, 200, 255, 255), 3.0f);
     drawList->AddCircleFilled(leftIndicatorPos, 4.0f, IM_COL32(0, 255, 200, 255), 12);
     
-    // Right jog wheel (Channel 2) - positioned to the right
-    ImGui::SameLine();
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 180); // Move to right side
-    ImGui::Text("Right Wheel (Ch2):");
+    // Reserve space for the left wheel
+    ImGui::Dummy(ImVec2(160, 160));
+    ImGui::Text("%.1f°", _jogWheelLeftRotation);
     
+    // Move to right column
+    ImGui::NextColumn();
+    
+    // Right jog wheel (Channel 2)
+    ImGui::Text("Right Wheel (Ch2):");
     ImVec2 rightCenter = ImGui::GetCursorScreenPos();
     rightCenter.x += 80;
     rightCenter.y += 80;
@@ -363,11 +370,12 @@ void OutputPanel::renderMidiControlMapping() {
     drawList->AddLine(rightCenter, rightIndicatorPos, IM_COL32(255, 100, 0, 255), 3.0f);
     drawList->AddCircleFilled(rightIndicatorPos, 4.0f, IM_COL32(255, 150, 0, 255), 12);
     
-    // Reserve space for both wheels
-    ImGui::Dummy(ImVec2(380, 160));
+    // Reserve space for the right wheel
+    ImGui::Dummy(ImVec2(160, 160));
+    ImGui::Text("%.1f°", _jogWheelRightRotation);
     
-    // Display rotation values
-    ImGui::Text("Left: %.1f°    Right: %.1f°", _jogWheelLeftRotation, _jogWheelRightRotation);
+    // End columns
+    ImGui::Columns(1);
 }
 
 void OutputPanel::renderMidiStatus() {
@@ -421,13 +429,23 @@ void OutputPanel::renderMidiSignalLog() {
                     char timeStr[32];
                     snprintf(timeStr, sizeof(timeStr), "%.3f", msg.timestamp);
                     
-                    // Create selectable text for copy/paste functionality
-                    char fullMessage[256];
-                    snprintf(fullMessage, sizeof(fullMessage), "[%s] %s", timeStr, msg.description.c_str());
+                    // Create message string for display
+                    std::string fullMessage = "[" + std::string(timeStr) + "] " + msg.description;
                     
-                    // Use Selectable with colored text
+                    // Use colored selectable text that can be copied
                     ImGui::PushStyleColor(ImGuiCol_Text, color);
-                    ImGui::Selectable(fullMessage, false);
+                    
+                    // Use text that can be selected and copied
+                    ImGui::TextUnformatted(fullMessage.c_str());
+                    
+                    // Add context menu for copying
+                    if (ImGui::BeginPopupContextItem()) {
+                        if (ImGui::MenuItem("Copy")) {
+                            ImGui::SetClipboardText(fullMessage.c_str());
+                        }
+                        ImGui::EndPopup();
+                    }
+                    
                     ImGui::PopStyleColor();
                 }
                 
