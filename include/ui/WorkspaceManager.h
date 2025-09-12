@@ -31,6 +31,11 @@ public:
     void togglePanelVisibility(const std::string& panelName);
     void resetLayout();
     
+    // Layout dimensions for panels
+    float getNavBarHeight() const { return _navBarHeight; }
+    float getTimelineHeight() const { return _timelineHeight; }
+    float getSidebarWidth() const { return _sidebarWidth; }
+    
 private:
     void calculateLayout();
     void updatePanelSizes();

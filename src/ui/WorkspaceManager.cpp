@@ -23,6 +23,12 @@ void WorkspaceManager::initialize() {
     _importPanel = std::make_unique<ImportPanel>();
     _effectsPanel = std::make_unique<EffectsPanel>();
     
+    // Set workspace manager reference on all panels
+    _timelinePanel->setWorkspaceManager(this);
+    _outputPanel->setWorkspaceManager(this);
+    _importPanel->setWorkspaceManager(this);
+    _effectsPanel->setWorkspaceManager(this);
+    
     // Initialize panels
     _timelinePanel->setVisible(true);
     _outputPanel->setVisible(true);
@@ -114,9 +120,9 @@ void WorkspaceManager::calculateLayout() {
     
     // Adjust for fullscreen mode
     if (_isFullscreen) {
-        _navBarHeight = 0.0f; // Hide navigation bar in fullscreen
+        _navBarHeight = 32.0f; // Show navigation bar in fullscreen
     } else {
-        _navBarHeight = 32.0f;
+        _navBarHeight = 0.0f; // Hide navigation bar in windowed mode
     }
     
     updatePanelSizes();

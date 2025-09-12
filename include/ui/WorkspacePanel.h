@@ -3,6 +3,9 @@
 namespace gamma {
 namespace ui {
 
+// Forward declaration
+class WorkspaceManager;
+
 /**
  * @brief Base class for workspace panels in the VJing interface
  * 
@@ -41,10 +44,16 @@ public:
      * @brief Set panel visibility
      */
     void setVisible(bool visible) { _visible = visible; }
+    
+    /**
+     * @brief Set workspace manager reference for layout coordination
+     */
+    void setWorkspaceManager(WorkspaceManager* manager) { _workspaceManager = manager; }
 
 protected:
     const char* _name;
     bool _visible;
+    WorkspaceManager* _workspaceManager;
 };
 
 } // namespace ui

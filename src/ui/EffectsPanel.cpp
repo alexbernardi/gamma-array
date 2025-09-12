@@ -1,4 +1,5 @@
 #include "ui/EffectsPanel.h"
+#include "ui/WorkspaceManager.h"
 #include "imgui.h"
 #include <cmath>
 
@@ -59,13 +60,15 @@ EffectsPanel::EffectsPanel()
 void EffectsPanel::render() {
     if (!_visible) return;
 
-    // Calculate panel dimensions (right sidebar)
+    // Get layout dimensions from workspace manager
     ImGuiViewport* viewport = ImGui::GetMainViewport();
-    float navBarHeight = 32.0f;
-    float sidebarWidth = 300.0f;
+    float navBarHeight = _workspaceManager ? _workspaceManager->getNavBarHeight() : 0.0f;
+    float timelineHeight = _workspaceManager ? _workspaceManager->getTimelineHeight() : 120.0f;
+    float sidebarWidth = _workspaceManager ? _workspaceManager->getSidebarWidth() : 300.0f;
     
+    // Calculate panel dimensions (right sidebar, avoiding timeline at bottom)
     ImVec2 panelPos = ImVec2(viewport->Size.x - sidebarWidth, navBarHeight);
-    ImVec2 panelSize = ImVec2(sidebarWidth, viewport->Size.y - navBarHeight);
+    ImVec2 panelSize = ImVec2(sidebarWidth, viewport->Size.y - navBarHeight - timelineHeight);
     
     ImGui::SetNextWindowPos(panelPos);
     ImGui::SetNextWindowSize(panelSize);
@@ -113,7 +116,7 @@ void EffectsPanel::update(float deltaTime) {
 
 void EffectsPanel::renderEffectControls() {
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f)); // Cyan
-    ImGui::Text("⚡ VJ Effects");
+    ImGui::Text("[FX] VJ Effects");
     ImGui::PopStyleColor();
     
     // Master controls

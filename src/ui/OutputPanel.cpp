@@ -1,4 +1,5 @@
 #include "ui/OutputPanel.h"
+#include "ui/WorkspaceManager.h"
 #include "imgui.h"
 #include <cmath>
 
@@ -15,12 +16,13 @@ OutputPanel::OutputPanel()
 void OutputPanel::render() {
     if (!_visible) return;
 
-    // Calculate panel dimensions (center area)
+    // Get layout dimensions from workspace manager
     ImGuiViewport* viewport = ImGui::GetMainViewport();
-    float navBarHeight = 32.0f;
-    float timelineHeight = 120.0f;
-    float sidebarWidth = 300.0f;
+    float navBarHeight = _workspaceManager ? _workspaceManager->getNavBarHeight() : 0.0f;
+    float timelineHeight = _workspaceManager ? _workspaceManager->getTimelineHeight() : 120.0f;
+    float sidebarWidth = _workspaceManager ? _workspaceManager->getSidebarWidth() : 300.0f;
     
+    // Calculate panel dimensions (center area between sidebars, above timeline)
     ImVec2 panelPos = ImVec2(sidebarWidth, navBarHeight);
     ImVec2 panelSize = ImVec2(viewport->Size.x - (sidebarWidth * 2), 
                              viewport->Size.y - navBarHeight - timelineHeight);
@@ -62,7 +64,7 @@ void OutputPanel::update(float deltaTime) {
 
 void OutputPanel::renderOutputControls() {
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f)); // Cyan
-    ImGui::Text("📺 Main Output");
+    ImGui::Text("[OUT] Main Output");
     ImGui::PopStyleColor();
     
     ImGui::SameLine();
@@ -114,7 +116,7 @@ void OutputPanel::renderVideoOutput() {
 }
 
 void OutputPanel::renderWaveformOverlay() {
-    ImGui::Text("🌊 Audio Waveform");
+    ImGui::Text("[WAV] Audio Waveform");
     ImGui::SameLine();
     
     // Simple waveform visualization
@@ -143,7 +145,7 @@ void OutputPanel::renderWaveformOverlay() {
 }
 
 void OutputPanel::renderMonitoringInfo() {
-    ImGui::Text("📊 Output Level: %.1f%%", _outputLevel * 100.0f);
+    ImGui::Text("[INFO] Output Level: %.1f%%", _outputLevel * 100.0f);
     ImGui::SameLine();
     ImGui::Text("| FPS: 60 | Res: 3440x1440 | Format: RGB24");
 }

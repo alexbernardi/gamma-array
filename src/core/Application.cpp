@@ -356,8 +356,10 @@ void Application::render() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // Create the navigation bar
-    renderNavigationBar();
+    // Create the navigation bar (only in fullscreen mode)
+    if (_fullscreen) {
+        renderNavigationBar();
+    }
 
     // Render workspace panels
     if (_workspaceManager) {

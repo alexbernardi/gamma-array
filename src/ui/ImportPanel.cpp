@@ -1,4 +1,5 @@
 #include "ui/ImportPanel.h"
+#include "ui/WorkspaceManager.h"
 #include "imgui.h"
 #include <filesystem>
 
@@ -29,13 +30,15 @@ ImportPanel::ImportPanel()
 void ImportPanel::render() {
     if (!_visible) return;
 
-    // Calculate panel dimensions (left sidebar)
+    // Get layout dimensions from workspace manager
     ImGuiViewport* viewport = ImGui::GetMainViewport();
-    float navBarHeight = 32.0f;
-    float sidebarWidth = 300.0f;
+    float navBarHeight = _workspaceManager ? _workspaceManager->getNavBarHeight() : 0.0f;
+    float timelineHeight = _workspaceManager ? _workspaceManager->getTimelineHeight() : 120.0f;
+    float sidebarWidth = _workspaceManager ? _workspaceManager->getSidebarWidth() : 300.0f;
     
+    // Calculate panel dimensions (left sidebar, avoiding timeline at bottom)
     ImVec2 panelPos = ImVec2(0, navBarHeight);
-    ImVec2 panelSize = ImVec2(sidebarWidth, viewport->Size.y - navBarHeight);
+    ImVec2 panelSize = ImVec2(sidebarWidth, viewport->Size.y - navBarHeight - timelineHeight);
     
     ImGui::SetNextWindowPos(panelPos);
     ImGui::SetNextWindowSize(panelSize);
@@ -78,7 +81,7 @@ void ImportPanel::update(float deltaTime) {
 
 void ImportPanel::renderImportControls() {
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f)); // Cyan
-    ImGui::Text("📁 Media Import");
+    ImGui::Text("[IMPORT] Media Import");
     ImGui::PopStyleColor();
     
     if (ImGui::Button("Import Files", ImVec2(-1, 0))) {
@@ -181,12 +184,12 @@ void ImportPanel::renderFileExplorer() {
             
             if (isDirectory) {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f)); // Yellow for folders
-                if (ImGui::Selectable(("📁 " + item).c_str())) {
+                if (ImGui::Selectable(("[DIR] " + item).c_str())) {
                     _currentPath += item;
                 }
                 ImGui::PopStyleColor();
             } else {
-                if (ImGui::Selectable(("📄 " + item).c_str())) {
+                if (ImGui::Selectable(("[FILE] " + item).c_str())) {
                     // TODO: Add to import queue or preview
                 }
                 

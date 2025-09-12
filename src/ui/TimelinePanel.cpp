@@ -1,4 +1,5 @@
 #include "ui/TimelinePanel.h"
+#include "ui/WorkspaceManager.h"
 #include "imgui.h"
 
 namespace gamma {
@@ -15,13 +16,13 @@ TimelinePanel::TimelinePanel()
 void TimelinePanel::render() {
     if (!_visible) return;
 
-    // Get available screen space (will be set by workspace manager)
+    // Get layout dimensions from workspace manager
     ImGuiViewport* viewport = ImGui::GetMainViewport();
-    float panelHeight = 120.0f; // Fixed height for timeline
+    float timelineHeight = _workspaceManager ? _workspaceManager->getTimelineHeight() : 120.0f;
     
-    // Position at bottom of screen (below navigation bar)
-    ImVec2 panelPos = ImVec2(0, viewport->Size.y - panelHeight);
-    ImVec2 panelSize = ImVec2(viewport->Size.x, panelHeight);
+    // Position at bottom of screen
+    ImVec2 panelPos = ImVec2(0, viewport->Size.y - timelineHeight);
+    ImVec2 panelSize = ImVec2(viewport->Size.x, timelineHeight);
     
     ImGui::SetNextWindowPos(panelPos);
     ImGui::SetNextWindowSize(panelSize);
@@ -59,7 +60,7 @@ void TimelinePanel::update(float deltaTime) {
 
 void TimelinePanel::renderPlaybackButtons() {
     // Play/Pause button
-    const char* playIcon = _isPlaying ? "⏸" : "▶";
+    const char* playIcon = _isPlaying ? "||" : ">";
     if (ImGui::Button(playIcon, ImVec2(40, 25))) {
         _isPlaying = !_isPlaying;
     }
@@ -70,7 +71,7 @@ void TimelinePanel::renderPlaybackButtons() {
     ImGui::SameLine();
     
     // Stop button
-    if (ImGui::Button("⏹", ImVec2(30, 25))) {
+    if (ImGui::Button("[]", ImVec2(30, 25))) {
         _isPlaying = false;
         _currentTime = 0.0f;
     }
@@ -105,7 +106,7 @@ void TimelinePanel::renderTimelineControls() {
     ImGui::Text("%.1fs / %.1fs", _currentTime, _totalDuration);
     
     // Additional controls row
-    ImGui::Text("🎵 Audio Sync | 🎛️ MIDI: Ready | 📺 Video: Loading...");
+    ImGui::Text("[AUDIO] Audio Sync | [MIDI] MIDI: Ready | [VIDEO] Video: Loading...");
     
     // Status indicators
     ImGui::SameLine();
