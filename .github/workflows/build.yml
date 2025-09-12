@@ -1,0 +1,56 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v1.14
+      with:
+        cmake-version: '3.20'
+    
+    - name: Setup MSVC
+      uses: microsoft/setup-msbuild@v1.3
+    
+    - name: Cache Dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          libs/
+          build/_deps/
+        key: ${{ runner.os }}-deps-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-deps-
+    
+    - name: Setup Dependencies
+      run: |
+        powershell -File scripts/setup_dependencies.ps1
+      shell: cmd
+    
+    - name: Configure CMake
+      run: cmake -B build -S . -G "Visual Studio 17 2022" -A x64
+    
+    - name: Build Debug
+      run: cmake --build build --config Debug
+    
+    - name: Build Release
+      run: cmake --build build --config Release
+    
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: gamma-array-windows
+        path: |
+          build/bin/Release/GammaArray.exe
+          build/bin/Debug/GammaArray_d.exe
