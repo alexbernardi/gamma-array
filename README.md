@@ -1,8 +1,9 @@
 # Gamma Array
 
-[![Build Status](https://github.com/your-username/gamma-array/workflows/Build%20and%20Test/badge.svg)](https://github.com/your-username/gamma-array/actions)
+[![Build Status](https://github.com/alexbernardi/gamma-array/workflows/Build%20and%20Test/badge.svg)](https://github.com/ale- 📋 **Issues**: [GitHub Issues](https://github.com/alexbernardi/gamma-array/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/alexbernardi/gamma-array/discussions)ernardi/gamma-array/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/your-username/gamma-array)
+[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/alexbernardi/gamma-array)
 
 A high-performance VJing application built with C++ and OpenGL, designed for real-time video manipulation and DJ controller integration.
 
@@ -41,7 +42,7 @@ Gamma Array follows a modular design pattern with clear separation of concerns:
 ### Setup and Build
 ```powershell
 # Clone the repository
-git clone https://github.com/your-username/gamma-array.git
+git clone https://github.com/alexbernardi/gamma-array.git
 cd gamma-array
 
 # One-command setup (installs dependencies and configures build)
