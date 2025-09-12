@@ -6,14 +6,16 @@ int main(int argc, char* argv[]) {
     std::cout << "Version: Development Build" << std::endl;
     std::cout << "=====================================" << std::endl;
     
-    // Check for windowed mode argument
-    bool fullscreen = true;
+    // Force windowed mode (fullscreen capability disabled)
+    bool fullscreen = false;  // Always windowed
     if (argc > 1) {
         std::string arg = argv[1];
-        if (arg == "--windowed" || arg == "-w") {
-            fullscreen = false;
+        if (arg == "--fullscreen" || arg == "-f") {
+            std::cout << "Fullscreen mode requested but disabled - using windowed mode" << std::endl;
+        } else if (arg == "--windowed" || arg == "-w") {
             std::cout << "Windowed mode requested via command line" << std::endl;
         }
+        // Note: fullscreen remains false regardless of arguments
     }
     
     try {

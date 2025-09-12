@@ -42,7 +42,7 @@ namespace {
 Application::Application() 
     : _initialized(false)
     , _shouldRun(false)
-    , _fullscreen(true)
+    , _fullscreen(false)  // Default to windowed mode
     , _window(nullptr)
     , _workspaceManager(nullptr) {
 }
@@ -59,8 +59,12 @@ bool Application::initialize(bool fullscreen) {
         return true;
     }
 
-    _fullscreen = fullscreen;
-    std::cout << "Initializing Gamma Array in " << (_fullscreen ? "fullscreen" : "windowed") << " mode..." << std::endl;
+    // Force windowed mode (fullscreen capability disabled)
+    _fullscreen = false;  // Always windowed regardless of parameter
+    if (fullscreen) {
+        std::cout << "Fullscreen mode requested but disabled - using windowed mode" << std::endl;
+    }
+    std::cout << "Initializing Gamma Array in windowed mode..." << std::endl;
 
     // Initialize in order: Window → OpenGL → ImGui → Subsystems
     if (!initializeWindow()) {
@@ -407,11 +411,11 @@ void Application::renderNavigationBar() {
             ImGui::Text("VJ Application");
             ImGui::PopStyleColor();
             
-            // Right side - Window controls
+            // Right side - Window controls (minimize and exit only - fullscreen disabled)
             float availableWidth = ImGui::GetContentRegionAvail().x;
             float buttonWidth = 28.0f;
             float spacing = 2.0f;
-            float totalButtonWidth = (buttonWidth * 3) + (spacing * 2);
+            float totalButtonWidth = (buttonWidth * 2) + (spacing * 1); // Only 2 buttons now
             
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth - totalButtonWidth);
             
@@ -429,7 +433,8 @@ void Application::renderNavigationBar() {
             
             ImGui::SameLine(0, spacing);
             
-            // Fullscreen/Windowed toggle button
+            // Fullscreen/Windowed toggle button - DISABLED FOR WINDOWED-ONLY MODE
+            /*
             const char* toggleIcon = _fullscreen ? "⧉" : "⧉";
             const char* toggleTooltip = _fullscreen ? "Switch to Windowed" : "Switch to Fullscreen";
             
@@ -441,6 +446,7 @@ void Application::renderNavigationBar() {
             }
             
             ImGui::SameLine(0, spacing);
+            */
             
             // Exit button
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.2f, 0.2f, 1.0f)); // Red on hover
@@ -462,6 +468,8 @@ void Application::renderNavigationBar() {
 }
 
 void Application::toggleFullscreen() {
+    // FULLSCREEN FUNCTIONALITY DISABLED - WINDOWED ONLY MODE
+    /*
     if (!_window) return;
     
     _fullscreen = !_fullscreen;
@@ -492,6 +500,10 @@ void Application::toggleFullscreen() {
                            windowWidth, windowHeight, 0);
         std::cout << "Switched to windowed mode" << std::endl;
     }
+    */
+    
+    // Do nothing - fullscreen disabled
+    std::cout << "Fullscreen functionality disabled - staying in windowed mode" << std::endl;
 }
 
 void Application::cleanupImGui() {
