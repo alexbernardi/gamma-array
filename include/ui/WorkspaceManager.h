@@ -2,7 +2,8 @@
 
 #include "WorkspacePanel.h"
 #include "TimelinePanel.h"
-#include "OutputPanel.h"
+#include "MainContainer.h"
+#include "MidiControlPanel.h"
 #include "ImportPanel.h"
 #include "EffectsPanel.h"
 #include <memory>
@@ -26,7 +27,8 @@ public:
     
     // Panel access
     TimelinePanel& getTimelinePanel() { return *_timelinePanel; }
-    OutputPanel& getOutputPanel() { return *_outputPanel; }
+    MainContainer& getMainContainer() { return *_mainContainer; }
+    MidiControlPanel& getMidiControlPanel() { return *_midiControlPanel; }
     ImportPanel& getImportPanel() { return *_importPanel; }
     EffectsPanel& getEffectsPanel() { return *_effectsPanel; }
     
@@ -47,7 +49,8 @@ private:
     
     // Panel instances
     std::unique_ptr<TimelinePanel> _timelinePanel;
-    std::unique_ptr<OutputPanel> _outputPanel;
+    std::unique_ptr<MainContainer> _mainContainer;
+    std::unique_ptr<MidiControlPanel> _midiControlPanel;
     std::unique_ptr<ImportPanel> _importPanel;
     std::unique_ptr<EffectsPanel> _effectsPanel;
     

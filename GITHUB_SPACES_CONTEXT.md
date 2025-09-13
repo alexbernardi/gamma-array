@@ -1,5 +1,6 @@
 # Gamma Array - AI Assistant Context
 NO EMOJIIS PLEASE
+YOU DONT HAVE TO SUMMARIZE EVERY PROMPT
 ## Project Summary
 Gamma Array is a high-performance VJing application built with C++ and OpenGL, focusing on turntable-style video scratching with DDJ-REV1 controller integration.
 
@@ -52,8 +53,20 @@ Gamma Array is a high-performance VJing application built with C++ and OpenGL, f
 gamma_array/
 ├── src/             # Source code with modular architecture
 │   ├── core/        # Core application and system management
+│   │   ├── Application.cpp
+│   │   └── Application.h (in include/core/)
 │   ├── midi/        # MIDI controller integration (DDJ-REV1)
+│   │   ├── MidiManager.cpp
+│   │   └── MidiManager.h (in include/midi/)
 │   ├── ui/          # ImGui user interface panels
+│   │   ├── WorkspaceManager.cpp    # Main workspace layout manager
+│   │   ├── WorkspacePanel.cpp      # Base panel class
+│   │   ├── MainContainer.cpp       # Central tabbed area (Output + MIDI Control)
+│   │   ├── TimelinePanel.cpp       # Bottom timeline panel
+│   │   ├── ImportPanel.cpp         # Left sidebar import panel
+│   │   ├── EffectsPanel.cpp        # Right sidebar effects panel
+│   │   ├── MidiControlPanel.cpp    # Standalone MIDI control window
+│   │   └── [headers in include/ui/]
 │   └── main.cpp     # Application entry point
 ├── include/         # Header files with matching structure
 │   ├── core/        # Core system headers
@@ -70,7 +83,15 @@ gamma_array/
 ├── scripts/         # Setup automation scripts
 ├── docs/            # Documentation
 ├── examples/        # Code examples and demos
-└── [config files]   # CMakeLists.txt, dev.ps1, README.md, etc.
+├── dev.ps1          # Development automation script
+├── CMakeLists.txt   # Build system configuration
+├── BUILD.md         # Build instructions
+├── CONTEXT.md       # Detailed development reference
+├── DEPENDENCIES.md  # Library installation guide
+├── QUICKSTART.md    # Quick start guide
+├── DEVELOPMENT.md   # Development workflow guide
+├── ddj_rev1_mapping.md  # DDJ-REV1 controller mapping reference
+└── [other config files]  # README.md, LICENSE, .gitignore, etc.
 ```
 
 ### Performance Requirements

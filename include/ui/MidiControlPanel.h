@@ -11,43 +11,38 @@ namespace gamma {
 namespace ui {
 
 /**
- * @brief Output workspace panel for video display and monitoring
+ * @brief MIDI Control Panel for MIDI device management and control mapping
  * 
- * This panel occupies the central area and displays the main video output
- * with overlays for monitoring, waveforms, and real-time effects preview.
- * Acts as the primary visual feedback for VJing performance.
+ * This panel handles all MIDI-related functionality including device selection,
+ * jog wheel control mapping, MIDI signal monitoring, and controller configuration.
+ * Provides visual feedback for MIDI input and controller state.
  */
-class OutputPanel : public WorkspacePanel {
+class MidiControlPanel : public WorkspacePanel {
 public:
-    OutputPanel();
-    virtual ~OutputPanel() = default;
+    MidiControlPanel();
+    virtual ~MidiControlPanel() = default;
 
     /**
-     * @brief Set reference to the application for accessing subsystems
+     * @brief Set reference to the application for accessing MIDI subsystem
      * @param app Pointer to the main application instance
      */
     void setApplication(gamma::core::Application* app);
 
     /**
-     * @brief Render the output panel UI
-     * Shows video output, waveform overlay, and monitoring info
+     * @brief Render the MIDI control panel UI
+     * Shows MIDI device selection, control mapping, and signal monitoring
      */
     void render() override;
 
     /**
-     * @brief Update output panel state
+     * @brief Update MIDI panel state
      * @param deltaTime Time elapsed since last frame
      */
     void update(float deltaTime) override;
 
 private:
-    // Application reference for accessing subsystems
+    // Application reference for accessing MIDI subsystem
     gamma::core::Application* _application;
-    
-    // Output state
-    bool _showWaveform;
-    bool _showMonitoring;
-    float _outputLevel;
     
     // MIDI state
     int _selectedDevice;
@@ -57,17 +52,7 @@ private:
     float _jogWheelLeftRotation;   // Left jog wheel rotation in degrees (0-360)
     float _jogWheelRightRotation;  // Right jog wheel rotation in degrees (0-360)
     
-    // UI helpers - existing output functionality
-    void renderVideoOutput();
-    void renderWaveformOverlay();
-    void renderMonitoringInfo();
-    void renderOutputControls();
-    
-    // Tab rendering methods
-    void renderOutputTab();
-    void renderMidiSetupTab();
-    
-    // MIDI UI helpers
+    // MIDI UI rendering methods
     void renderMidiDeviceSelection();
     void renderMidiControlMapping();
     void renderMidiStatus();

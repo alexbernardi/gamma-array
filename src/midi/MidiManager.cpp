@@ -3,6 +3,9 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <fstream>
+#include <chrono>
+#include <ctime>
 
 namespace gamma {
 namespace midi {
@@ -234,6 +237,7 @@ void MidiManager::processMidiMessage(const std::vector<unsigned char>& message, 
     }
 
     std::string description = describeMidiMessage(message);
+    bool isJogMessage = false; // Declare at function scope
     
     // Check for jog wheel messages and call callback if set
     if (_jogWheelCallback && message.size() >= 3) {
@@ -242,9 +246,7 @@ void MidiManager::processMidiMessage(const std::vector<unsigned char>& message, 
         unsigned char value = message[2];
         
         // DDJ-REV1 jog wheel mappings
-        bool isJogMessage = false;
         int channel = 0;
-        float deltaRotation = 0.0f;
         
         if (status == 0xB0) { // Channel 1 CC
             if (cc == 0x21 || cc == 0x22) { // CC21 or CC22 (finger on/off)
@@ -259,20 +261,34 @@ void MidiManager::processMidiMessage(const std::vector<unsigned char>& message, 
         }
         
         if (isJogMessage) {
-            // Determine rotation direction and amount
-            if (value == 0x41) {
-                deltaRotation = 0.2f; // Clockwise
-            } else if (value == 0x3F) {
-                deltaRotation = -0.2f; // Counter-clockwise
-            }
+            // DDJ-REV1 velocity-based rotation calculation
+            // 0x3F and below: counter-clockwise (lower values = faster)
+            // 0x41 and above: clockwise (higher values = faster)
+            // No center/stationary value - wheel is always moving
             
-            if (deltaRotation != 0.0f) {
+            const float BASE_ROTATION = 0.5f; // Base rotation per tick in degrees
+            float deltaRotation = 0.0f;
+            
+            if (value >= 0x41) {
+                // Clockwise: 0x41 = slowest, higher values = faster
+                unsigned char velocityOffset = value - 0x41; // Distance from slowest clockwise
+                float speedMultiplier = 1.0f + velocityOffset * 0.3f; // Scale up speed
+                deltaRotation = BASE_ROTATION * speedMultiplier;
+            } else if (value <= 0x3F) {
+                // Counter-clockwise: 0x3F = slowest, lower values = faster
+                unsigned char velocityOffset = 0x3F - value; // Distance from slowest counter-clockwise
+                float speedMultiplier = 1.0f + velocityOffset * 0.3f; // Scale up speed
+                deltaRotation = -BASE_ROTATION * speedMultiplier;
+            }
+            // Note: 0x40 would be an unexpected value between the ranges
+            
+            if (deltaRotation != 0.0f && _jogWheelCallback) {
                 _jogWheelCallback(channel, deltaRotation);
             }
         }
     }
     
-    // Add to message log
+    // Add to message log (always log for CSV export, but distinguish jog messages)
     {
         std::lock_guard<std::mutex> lock(_messageLogMutex);
         _messageLog.emplace_back(message, timestamp, description);
@@ -283,8 +299,13 @@ void MidiManager::processMidiMessage(const std::vector<unsigned char>& message, 
         }
     }
 
-    // Debug output
-    std::cout << "MIDI: " << description << std::endl;
+    // Debug output only for non-jog wheel messages to avoid console spam
+    if (!isJogMessage) {
+        std::cout << "MIDI: " << description << std::endl;
+    } else {
+        // Still show jog wheel messages but with a prefix
+        std::cout << "JOG WHEEL: " << description << std::endl;
+    }
 }
 
 std::string MidiManager::describeMidiMessage(const std::vector<unsigned char>& message) {
@@ -353,6 +374,100 @@ std::string MidiManager::describeMidiMessage(const std::vector<unsigned char>& m
     }
     
     return desc.str();
+}
+
+bool MidiManager::exportToCSV(const std::string& filename) {
+    std::lock_guard<std::mutex> lock(_messageLogMutex);
+    
+    if (_messageLog.empty()) {
+        std::cout << "No MIDI messages to export" << std::endl;
+        return false;
+    }
+    
+    // Generate filename if not provided
+    std::string csvFilename = filename;
+    if (csvFilename.empty()) {
+        auto now = std::chrono::system_clock::now();
+        auto time_t = std::chrono::system_clock::to_time_t(now);
+        auto tm = *std::localtime(&time_t);
+        
+        std::ostringstream oss;
+        oss << "midi_log_" 
+            << std::put_time(&tm, "%Y%m%d_%H%M%S")
+            << ".csv";
+        csvFilename = oss.str();
+    }
+    
+    // Open file for writing
+    std::ofstream csvFile(csvFilename);
+    if (!csvFile.is_open()) {
+        std::cerr << "Failed to open file for writing: " << csvFilename << std::endl;
+        return false;
+    }
+    
+    // Write CSV header
+    csvFile << "Timestamp,Raw_Bytes,Description,Status,Channel,Data1,Data2,Message_Type\n";
+    
+    // Write each MIDI message
+    for (const auto& msg : _messageLog) {
+        // Format timestamp
+        csvFile << std::fixed << std::setprecision(3) << msg.timestamp << ",";
+        
+        // Raw bytes in hex format
+        csvFile << "\"";
+        for (size_t i = 0; i < msg.data.size(); ++i) {
+            if (i > 0) csvFile << " ";
+            csvFile << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(msg.data[i]);
+        }
+        csvFile << std::dec << "\",";
+        
+        // Description (escaped for CSV)
+        std::string escapedDesc = msg.description;
+        // Replace quotes with double quotes for CSV escaping
+        size_t pos = 0;
+        while ((pos = escapedDesc.find('"', pos)) != std::string::npos) {
+            escapedDesc.replace(pos, 1, "\"\"");
+            pos += 2;
+        }
+        csvFile << "\"" << escapedDesc << "\",";
+        
+        // Parse MIDI data for structured columns
+        if (!msg.data.empty()) {
+            unsigned char status = msg.data[0];
+            csvFile << std::hex << static_cast<int>(status) << std::dec << ",";
+            
+            // Extract channel (for channel messages)
+            if ((status & 0xF0) != 0xF0) {
+                csvFile << static_cast<int>(status & 0x0F) + 1 << ",";
+            } else {
+                csvFile << ",";
+            }
+            
+            // Data bytes
+            csvFile << (msg.data.size() > 1 ? std::to_string(static_cast<int>(msg.data[1])) : "") << ",";
+            csvFile << (msg.data.size() > 2 ? std::to_string(static_cast<int>(msg.data[2])) : "") << ",";
+            
+            // Message type
+            switch (status & 0xF0) {
+                case 0x80: csvFile << "Note Off"; break;
+                case 0x90: csvFile << "Note On"; break;
+                case 0xB0: csvFile << "Control Change"; break;
+                case 0xC0: csvFile << "Program Change"; break;
+                case 0xD0: csvFile << "Channel Pressure"; break;
+                case 0xE0: csvFile << "Pitch Bend"; break;
+                case 0xF0: csvFile << "System"; break;
+                default: csvFile << "Unknown"; break;
+            }
+        } else {
+            csvFile << ",,,,Unknown";
+        }
+        
+        csvFile << "\n";
+    }
+    
+    csvFile.close();
+    std::cout << "MIDI log exported to: " << csvFilename << " (" << _messageLog.size() << " messages)" << std::endl;
+    return true;
 }
 
 } // namespace midi

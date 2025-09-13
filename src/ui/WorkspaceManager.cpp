@@ -20,24 +20,32 @@ WorkspaceManager::~WorkspaceManager() {
 void WorkspaceManager::initialize(gamma::core::Application* application) {
     // Create panel instances
     _timelinePanel = std::make_unique<TimelinePanel>();
-    _outputPanel = std::make_unique<OutputPanel>();
+    _mainContainer = std::make_unique<MainContainer>();
+    _midiControlPanel = std::make_unique<MidiControlPanel>();
     _importPanel = std::make_unique<ImportPanel>();
     _effectsPanel = std::make_unique<EffectsPanel>();
     
     // Set workspace manager reference on all panels
     _timelinePanel->setWorkspaceManager(this);
-    _outputPanel->setWorkspaceManager(this);
+    _mainContainer->setWorkspaceManager(this);
+    _midiControlPanel->setWorkspaceManager(this);
     _importPanel->setWorkspaceManager(this);
     _effectsPanel->setWorkspaceManager(this);
     
-    // Set application reference on OutputPanel for MIDI access
-    if (application && _outputPanel) {
-        _outputPanel->setApplication(application);
+    // Set application reference on panels that need it
+    if (application) {
+        if (_mainContainer) {
+            _mainContainer->setApplication(application);
+        }
+        if (_midiControlPanel) {
+            _midiControlPanel->setApplication(application);
+        }
     }
     
     // Initialize panels
     _timelinePanel->setVisible(true);
-    _outputPanel->setVisible(true);
+    _mainContainer->setVisible(true);
+    _midiControlPanel->setVisible(false); // Start hidden, can be toggled
     _importPanel->setVisible(true);
     _effectsPanel->setVisible(true);
     
@@ -52,7 +60,8 @@ void WorkspaceManager::render() {
     
     // Render all panels
     if (_importPanel) _importPanel->render();
-    if (_outputPanel) _outputPanel->render();
+    if (_mainContainer) _mainContainer->render();
+    if (_midiControlPanel) _midiControlPanel->render();
     if (_effectsPanel) _effectsPanel->render();
     if (_timelinePanel) _timelinePanel->render();
     
@@ -63,14 +72,16 @@ void WorkspaceManager::render() {
 void WorkspaceManager::update(float deltaTime) {
     // Update all panels
     if (_timelinePanel) _timelinePanel->update(deltaTime);
-    if (_outputPanel) _outputPanel->update(deltaTime);
+    if (_mainContainer) _mainContainer->update(deltaTime);
+    if (_midiControlPanel) _midiControlPanel->update(deltaTime);
     if (_importPanel) _importPanel->update(deltaTime);
     if (_effectsPanel) _effectsPanel->update(deltaTime);
 }
 
 void WorkspaceManager::shutdown() {
     _timelinePanel.reset();
-    _outputPanel.reset();
+    _mainContainer.reset();
+    _midiControlPanel.reset();
     _importPanel.reset();
     _effectsPanel.reset();
 }
@@ -85,8 +96,10 @@ void WorkspaceManager::setFullscreen(bool fullscreen) {
 void WorkspaceManager::togglePanelVisibility(const std::string& panelName) {
     if (panelName == "Timeline" && _timelinePanel) {
         _timelinePanel->setVisible(!_timelinePanel->isVisible());
-    } else if (panelName == "Output" && _outputPanel) {
-        _outputPanel->setVisible(!_outputPanel->isVisible());
+    } else if (panelName == "Main" && _mainContainer) {
+        _mainContainer->setVisible(!_mainContainer->isVisible());
+    } else if (panelName == "MIDI" && _midiControlPanel) {
+        _midiControlPanel->setVisible(!_midiControlPanel->isVisible());
     } else if (panelName == "Import" && _importPanel) {
         _importPanel->setVisible(!_importPanel->isVisible());
     } else if (panelName == "Effects" && _effectsPanel) {
@@ -102,7 +115,8 @@ void WorkspaceManager::resetLayout() {
     _sidebarWidth = 300.0f;
     
     if (_timelinePanel) _timelinePanel->setVisible(true);
-    if (_outputPanel) _outputPanel->setVisible(true);
+    if (_mainContainer) _mainContainer->setVisible(true);
+    if (_midiControlPanel) _midiControlPanel->setVisible(false); // MIDI panel starts hidden
     if (_importPanel) _importPanel->setVisible(true);
     if (_effectsPanel) _effectsPanel->setVisible(true);
     
@@ -155,7 +169,7 @@ void WorkspaceManager::renderWorkspaceOverlay() {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     
     ImVec2 overlayPos = ImVec2(viewport->Size.x - 200, _navBarHeight + 10);
-    ImVec2 overlaySize = ImVec2(180, 80);
+    ImVec2 overlaySize = ImVec2(180, 100);
     
     ImGui::SetNextWindowPos(overlayPos);
     ImGui::SetNextWindowSize(overlaySize);
@@ -178,9 +192,16 @@ void WorkspaceManager::renderWorkspaceOverlay() {
         
         // Panel visibility status
         ImGui::Text("Timeline: %s", _timelinePanel && _timelinePanel->isVisible() ? "ON" : "OFF");
-        ImGui::Text("Output: %s", _outputPanel && _outputPanel->isVisible() ? "ON" : "OFF");
+        ImGui::Text("Main: %s", _mainContainer && _mainContainer->isVisible() ? "ON" : "OFF");
         ImGui::Text("Import: %s", _importPanel && _importPanel->isVisible() ? "ON" : "OFF");
         ImGui::Text("Effects: %s", _effectsPanel && _effectsPanel->isVisible() ? "ON" : "OFF");
+        
+        // Add toggle button for MIDI control panel
+        if (ImGui::Button("MIDI Controls")) {
+            if (_midiControlPanel) {
+                _midiControlPanel->setVisible(!_midiControlPanel->isVisible());
+            }
+        }
         
         ImGui::PopStyleColor();
     }

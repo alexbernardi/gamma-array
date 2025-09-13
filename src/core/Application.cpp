@@ -324,16 +324,16 @@ bool Application::initializeImGui() {
 bool Application::initializeSubsystems() {
     std::cout << "Initializing subsystems..." << std::endl;
 
-    // Initialize workspace manager
-    _workspaceManager = std::make_unique<gamma::ui::WorkspaceManager>();
-    _workspaceManager->initialize(this);
-
-    // Initialize MIDI system
+    // Initialize MIDI system first (required by UI panels)
     _midiManager = std::make_unique<gamma::midi::MidiManager>();
     if (!_midiManager->initialize()) {
         std::cerr << "Warning: MIDI system initialization failed" << std::endl;
         // Continue without MIDI - not a fatal error
     }
+
+    // Initialize workspace manager (after MIDI for callback registration)
+    _workspaceManager = std::make_unique<gamma::ui::WorkspaceManager>();
+    _workspaceManager->initialize(this);
 
     // TODO: Initialize rendering engine
     // TODO: Initialize audio engine  

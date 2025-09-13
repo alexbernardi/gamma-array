@@ -117,6 +117,13 @@ public:
      */
     void setJogWheelCallback(std::function<void(int, float)> callback);
 
+    /**
+     * @brief Export logged MIDI messages to CSV file
+     * @param filename Optional filename (auto-generated if empty)
+     * @return true if export successful
+     */
+    bool exportToCSV(const std::string& filename = "");
+
 private:
     std::unique_ptr<RtMidiIn> _midiIn;
     bool _isInitialized;

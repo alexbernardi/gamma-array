@@ -1,4 +1,4 @@
-#include "ui/OutputPanel.h"
+#include "ui/MidiControlPanel.h"
 #include "ui/WorkspaceManager.h"
 #include "core/Application.h"
 #include "midi/MidiManager.h"
@@ -13,31 +13,23 @@
 namespace gamma {
 namespace ui {
 
-OutputPanel::OutputPanel()
-    : WorkspacePanel("Output")
+MidiControlPanel::MidiControlPanel()
+    : WorkspacePanel("MIDI Control")
     , _application(nullptr)
-    , _showWaveform(true)
-    , _showMonitoring(true)
-    , _outputLevel(0.75f)
     , _selectedDevice(0)
     , _isConnected(false)
     , _jogWheelLeftRotation(0.0f)
     , _jogWheelRightRotation(0.0f) {
 }
 
-void OutputPanel::setApplication(gamma::core::Application* app) {
+void MidiControlPanel::setApplication(gamma::core::Application* app) {
     _application = app;
     
-    // Set up jog wheel callback with MIDI manager
-    if (_application && _application->getMidiManager()) {
-        auto callback = [this](int channel, float deltaRotation) {
-            this->updateJogWheelRotation(channel, deltaRotation);
-        };
-        _application->getMidiManager()->setJogWheelCallback(callback);
-    }
+    // Note: Jog wheel callback is now handled by MainContainer's MIDI tab
+    // to avoid conflicts between the two panels
 }
 
-void OutputPanel::render() {
+void MidiControlPanel::render() {
     if (!_visible) return;
 
     // Safety check for ImGui context
@@ -51,218 +43,58 @@ void OutputPanel::render() {
     float timelineHeight = _workspaceManager ? _workspaceManager->getTimelineHeight() : 120.0f;
     float sidebarWidth = _workspaceManager ? _workspaceManager->getSidebarWidth() : 300.0f;
     
-    // Calculate panel dimensions (center area between sidebars, above timeline)
-    ImVec2 panelPos = ImVec2(sidebarWidth, navBarHeight);
-    ImVec2 panelSize = ImVec2(viewport->Size.x - (sidebarWidth * 2), 
-                             viewport->Size.y - navBarHeight - timelineHeight);
+    // Calculate panel dimensions - position it as a side panel or overlay
+    // For now, let's make it a floating window that can be positioned by the user
+    ImVec2 panelSize = ImVec2(800, 600); // Fixed size for MIDI control panel
     
-    ImGui::SetNextWindowPos(panelPos);
-    ImGui::SetNextWindowSize(panelSize);
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
     
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize |
-                            ImGuiWindowFlags_NoMove |
-                            ImGuiWindowFlags_NoCollapse |
-                            ImGuiWindowFlags_NoTitleBar;
-    
-    if (ImGui::Begin("Output", &_visible, flags)) {
-        // Create tabbed interface
-        if (ImGui::BeginTabBar("OutputTabs", ImGuiTabBarFlags_None)) {
-            
-            // Output Tab - for video display
-            if (ImGui::BeginTabItem("Output")) {
-                renderOutputTab();
-                ImGui::EndTabItem();
-            }
-            
-            // MIDI Control Setup Tab - for MIDI configuration
-            if (ImGui::BeginTabItem("MIDI Control Setup")) {
-                renderMidiSetupTab();
-                ImGui::EndTabItem();
-            }
-            
-            ImGui::EndTabBar();
+    if (ImGui::Begin("MIDI Control Setup - DDJ-REV1", &_visible, flags)) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f)); // Cyan
+        ImGui::Text("MIDI Control Setup - DDJ-REV1");
+        ImGui::PopStyleColor();
+        
+        ImGui::Separator();
+        
+        // Get MIDI manager if available
+        gamma::midi::MidiManager* midiManager = nullptr;
+        if (_application) {
+            midiManager = _application->getMidiManager();
         }
+        
+        // Create child regions for organized layout
+        ImVec2 availableSize = ImGui::GetContentRegionAvail();
+        float leftPanelWidth = availableSize.x * 0.4f;
+        float rightPanelWidth = availableSize.x * 0.6f - 10.0f; // 10px spacing
+        
+        // Left panel - Device and control info
+        if (ImGui::BeginChild("MidiLeftPanel", ImVec2(leftPanelWidth, 0), true)) {
+            renderMidiDeviceSelection();
+            ImGui::Spacing();
+            renderMidiControlMapping();
+            ImGui::Spacing();
+            renderMidiStatus();
+            ImGui::Spacing();
+            renderMidiConfigButtons();
+        }
+        ImGui::EndChild();
+        
+        ImGui::SameLine();
+        
+        // Right panel - Signal log
+        if (ImGui::BeginChild("MidiRightPanel", ImVec2(rightPanelWidth, 0), true)) {
+            renderMidiSignalLog();
+        }
+        ImGui::EndChild();
     }
     ImGui::End();
 }
 
-void OutputPanel::update(float deltaTime) {
-    // Simulate output level fluctuation
-    static float time = 0.0f;
-    time += deltaTime;
-    _outputLevel = 0.5f + 0.3f * sinf(time * 2.0f);
+void MidiControlPanel::update(float deltaTime) {
+    // No specific updates needed for MIDI panel currently
 }
 
-void OutputPanel::renderOutputControls() {
-    if (!ImGui::GetCurrentContext()) return; // Safety check
-    
-    try {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f)); // Cyan
-        ImGui::Text("[OUT] Main Output");
-        ImGui::PopStyleColor();
-        
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 200);
-        
-        if (ImGui::Checkbox("Waveform", &_showWaveform)) {
-            // Checkbox changed - no special handling needed for now
-        }
-        ImGui::SameLine();
-        if (ImGui::Checkbox("Monitor", &_showMonitoring)) {
-            // Checkbox changed - no special handling needed for now
-        }
-    } catch (...) {
-        // Fallback rendering if there's any issue
-        ImGui::Text("[OUT] Output Controls (Error)");
-    }
-}
-
-void OutputPanel::renderVideoOutput() {
-    // Get available content area
-    ImVec2 contentStart = ImGui::GetCursorPos();
-    ImVec2 contentSize = ImGui::GetContentRegionAvail();
-    contentSize.y -= 60; // Leave space for overlays
-    
-    // Create an invisible button to define the video area
-    ImGui::InvisibleButton("VideoArea", contentSize);
-    
-    // Draw video placeholder using draw list
-    ImVec2 videoStart = ImGui::GetItemRectMin();
-    ImVec2 videoEnd = ImGui::GetItemRectMax();
-    ImDrawList* drawList = ImGui::GetWindowDrawList();
-    
-    // Background
-    drawList->AddRectFilled(videoStart, videoEnd, IM_COL32(20, 20, 20, 255));
-    
-    // Video placeholder content
-    ImVec2 center = ImVec2(videoStart.x + contentSize.x * 0.5f, 
-                          videoStart.y + contentSize.y * 0.5f);
-    
-    // Draw crosshairs
-    drawList->AddLine(ImVec2(center.x - 50, center.y), 
-                     ImVec2(center.x + 50, center.y),
-                     IM_COL32(0, 200, 255, 128), 2.0f);
-    drawList->AddLine(ImVec2(center.x, center.y - 50), 
-                     ImVec2(center.x, center.y + 50),
-                     IM_COL32(0, 200, 255, 128), 2.0f);
-    
-    // Text overlay
-    ImVec2 textPos = ImVec2(center.x - 100, center.y + 60);
-    drawList->AddText(textPos, IM_COL32(200, 200, 200, 255), 
-                     "Video Output Ready");
-    
-    ImVec2 textPos2 = ImVec2(center.x - 120, center.y + 80);
-    drawList->AddText(textPos2, IM_COL32(150, 150, 150, 255), 
-                     "Awaiting video input...");
-}
-
-void OutputPanel::renderWaveformOverlay() {
-    ImGui::Text("[WAV] Audio Waveform");
-    ImGui::SameLine();
-    
-    // Simple waveform visualization with proper ImGui item
-    ImVec2 waveSize = ImVec2(ImGui::GetContentRegionAvail().x - 100, 30);
-    
-    // Create an invisible button for the waveform area
-    ImGui::InvisibleButton("WaveformArea", waveSize);
-    
-    ImVec2 waveStart = ImGui::GetItemRectMin();
-    ImVec2 waveEnd = ImGui::GetItemRectMax();
-    ImDrawList* drawList = ImGui::GetWindowDrawList();
-    
-    // Waveform background
-    drawList->AddRectFilled(waveStart, waveEnd, IM_COL32(15, 15, 15, 255));
-    
-    // Draw simple waveform
-    for (int i = 0; i < static_cast<int>(waveSize.x); i += 2) {
-        float phase = i * 0.1f;
-        float amplitude = _outputLevel * sinf(phase) * 10.0f;
-        float y = waveStart.y + waveSize.y * 0.5f + amplitude;
-        
-        drawList->AddLine(ImVec2(waveStart.x + i, waveStart.y + waveSize.y * 0.5f),
-                         ImVec2(waveStart.x + i, y),
-                         IM_COL32(0, 255, 100, 180), 1.0f);
-    }
-    
-    ImGui::NewLine();
-}
-
-void OutputPanel::renderMonitoringInfo() {
-    if (!ImGui::GetCurrentContext()) {
-        return; // Safety check for ImGui context
-    }
-    
-    try {
-        ImGui::Text("[INFO] Output Level: %.1f%%", _outputLevel * 100.0f);
-        ImGui::SameLine();
-        ImGui::Text("| FPS: 60 | Res: 3440x1440 | Format: RGB24");
-    } catch (...) {
-        // Fallback if there's any rendering issue
-        ImGui::Text("[INFO] Monitoring data unavailable");
-    }
-}
-
-void OutputPanel::renderOutputTab() {
-    // Move existing output functionality into this tab
-    
-    // Panel header with controls
-    renderOutputControls();
-    ImGui::Separator();
-    
-    // Main video output area
-    renderVideoOutput();
-    
-    // Overlays
-    if (_showWaveform) {
-        renderWaveformOverlay();
-    }
-    
-    if (_showMonitoring) {
-        renderMonitoringInfo();
-    }
-}
-
-void OutputPanel::renderMidiSetupTab() {
-    // MIDI Control Setup tab content
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f)); // Cyan
-    ImGui::Text("MIDI Control Setup - DDJ-REV1");
-    ImGui::PopStyleColor();
-    
-    ImGui::Separator();
-    
-    // Get MIDI manager if available
-    gamma::midi::MidiManager* midiManager = nullptr;
-    if (_application) {
-        midiManager = _application->getMidiManager();
-    }
-    
-    // Create child regions for organized layout
-    ImVec2 availableSize = ImGui::GetContentRegionAvail();
-    float leftPanelWidth = availableSize.x * 0.4f;
-    float rightPanelWidth = availableSize.x * 0.6f - 10.0f; // 10px spacing
-    
-    // Left panel - Device and control info
-    if (ImGui::BeginChild("MidiLeftPanel", ImVec2(leftPanelWidth, 0), true)) {
-        renderMidiDeviceSelection();
-        ImGui::Spacing();
-        renderMidiControlMapping();
-        ImGui::Spacing();
-        renderMidiStatus();
-        ImGui::Spacing();
-        renderMidiConfigButtons();
-    }
-    ImGui::EndChild();
-    
-    ImGui::SameLine();
-    
-    // Right panel - Signal log
-    if (ImGui::BeginChild("MidiRightPanel", ImVec2(rightPanelWidth, 0), true)) {
-        renderMidiSignalLog();
-    }
-    ImGui::EndChild();
-}
-
-void OutputPanel::renderMidiDeviceSelection() {
+void MidiControlPanel::renderMidiDeviceSelection() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Device Selection:");
     
     // Get available devices from MIDI manager
@@ -314,7 +146,7 @@ void OutputPanel::renderMidiDeviceSelection() {
     }
 }
 
-void OutputPanel::renderMidiControlMapping() {
+void MidiControlPanel::renderMidiControlMapping() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Jog Wheel Visualization:");
     
     // Create columns for side-by-side wheels
@@ -378,7 +210,7 @@ void OutputPanel::renderMidiControlMapping() {
     ImGui::Columns(1);
 }
 
-void OutputPanel::renderMidiStatus() {
+void MidiControlPanel::renderMidiStatus() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Status:");
     
     if (_isConnected) {
@@ -390,7 +222,7 @@ void OutputPanel::renderMidiStatus() {
     }
 }
 
-void OutputPanel::renderMidiSignalLog() {
+void MidiControlPanel::renderMidiSignalLog() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "MIDI Signal Log:");
     
     // Create scrolling region for MIDI messages
@@ -432,20 +264,9 @@ void OutputPanel::renderMidiSignalLog() {
                     // Create message string for display
                     std::string fullMessage = "[" + std::string(timeStr) + "] " + msg.description;
                     
-                    // Use colored selectable text that can be copied
+                    // Simple colored text that can be selected normally
                     ImGui::PushStyleColor(ImGuiCol_Text, color);
-                    
-                    // Use text that can be selected and copied
                     ImGui::TextUnformatted(fullMessage.c_str());
-                    
-                    // Add context menu for copying
-                    if (ImGui::BeginPopupContextItem()) {
-                        if (ImGui::MenuItem("Copy")) {
-                            ImGui::SetClipboardText(fullMessage.c_str());
-                        }
-                        ImGui::EndPopup();
-                    }
-                    
                     ImGui::PopStyleColor();
                 }
                 
@@ -461,7 +282,7 @@ void OutputPanel::renderMidiSignalLog() {
     ImGui::EndChild();
 }
 
-void OutputPanel::renderMidiConfigButtons() {
+void MidiControlPanel::renderMidiConfigButtons() {
     // Simplified controls - just clear log for now
     if (ImGui::Button("Clear Log", ImVec2(-1, 0))) {
         if (_application && _application->getMidiManager()) {
@@ -470,7 +291,7 @@ void OutputPanel::renderMidiConfigButtons() {
     }
 }
 
-void OutputPanel::updateJogWheelRotation(int channel, float deltaRotation) {
+void MidiControlPanel::updateJogWheelRotation(int channel, float deltaRotation) {
     if (channel == 1) {
         _jogWheelLeftRotation += deltaRotation;
         
