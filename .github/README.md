@@ -1,6 +1,6 @@
 # Gamma Array
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)]((https://github.com/alexbernardi/gamma-array?tab=MIT-1-ov-file#readme))
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/alexbernardi/gamma-array?tab=MIT-1-ov-file#readme)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/alexbernardi/gamma-array)
 [![Language](https://img.shields.io/badge/language-C%2B%2B17-orange.svg)](https://github.com/alexbernardi/gamma-array)
 
