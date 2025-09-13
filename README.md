@@ -1,8 +1,8 @@
 # Gamma Array
 
-[![Build Status](https://github.com/alexbernardi/gamma-array/workflows/Build/badge.svg)](https://github.com/alexbernardi/gamma-array/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/alexbernardi/gamma-array)
+[![Language](https://img.shields.io/badge/language-C%2B%2B17-orange.svg)](https://github.com/alexbernardi/gamma-array)
 
 A high-performance VJing application built with C++ and OpenGL, focusing on turntable-style video scratching with DDJ-REV1 controller integration.
 
