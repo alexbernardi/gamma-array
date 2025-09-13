@@ -15,8 +15,8 @@ Gamma Array is a high-performance VJing application built with C++ and OpenGL, f
 - Keep code examples minimal and focused on the immediate task
 
 ### Current Development Status
-- Complete: Project structure, build system, documentation, GitHub repository, dependency setup, core application architecture, MIDI system integration, UI framework with tabbed interface
-- Current: DDJ-REV1 MIDI controller fully integrated with real-time signal logging, Adobe-style workspace with four-panel layout, working build system
+- Complete: Project structure, build system, documentation, GitHub repository, dependency setup, core application architecture, MIDI system integration with velocity-based jog wheel control, CSV export functionality, UI framework with tabbed interface
+- Current: DDJ-REV1 MIDI controller fully integrated with accurate velocity-responsive rotation, comprehensive MIDI logging and CSV export, Adobe-style workspace with four-panel layout, working build system
 - Next: Video processing pipeline, audio integration, effects system, MIDI mapping for VJ controls
 
 ### Technical Stack
@@ -25,6 +25,15 @@ Gamma Array is a high-performance VJing application built with C++ and OpenGL, f
 - Graphics: OpenGL 3.3+ for real-time rendering
 - Libraries: GLFW (windowing), ImGui (UI), RtMidi (MIDI), PortAudio (audio)
 - Architecture: Modular design with clear separation between core, rendering, audio, MIDI, and UI modules
+
+### MIDI Integration Features
+- **DDJ-REV1 Controller Support**: Full integration with Pioneer DDJ-REV1 controller
+- **Velocity-Responsive Jog Wheels**: Accurate rotation speed mapping based on physical wheel velocity
+  - Clockwise: 0x41+ (0x41 = slowest, higher values = faster)
+  - Counter-clockwise: 0x3F- (0x3F = slowest, lower values = faster)
+- **Comprehensive MIDI Logging**: Real-time message capture with hex formatting
+- **CSV Export**: Timestamped CSV export with parsed MIDI data for analysis
+- **Real-time Performance**: Sub-5ms MIDI input latency for responsive control
 
 ### Build Commands
 ```powershell
@@ -106,10 +115,12 @@ gamma_array/
 3. ✅ Implement OpenGL context initialization
 4. ✅ Add MIDI device detection for DDJ-REV1
 5. ✅ Build basic UI layout system
-6. 🔄 Implement video processing pipeline for VJ scratching
-7. 🔄 Add audio playback and analysis capabilities
-8. 🔄 Create effects processing system
-9. 🔄 Map DDJ-REV1 controls to VJ functions
+6. ✅ Implement velocity-based jog wheel rotation with proper DDJ-REV1 encoding
+7. ✅ Add comprehensive MIDI logging and CSV export functionality
+8. 🔄 Implement video processing pipeline for VJ scratching
+9. 🔄 Add audio playback and analysis capabilities
+10. 🔄 Create effects processing system
+11. 🔄 Map DDJ-REV1 controls to VJ functions
 
 ### Important Notes
 - Always verify build works after each change
